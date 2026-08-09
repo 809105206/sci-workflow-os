@@ -1,0 +1,70 @@
+---
+title: "快速开始"
+---
+
+## 前置条件
+
+- Git 2.40+
+- Python 3.11+
+- `uv`
+- Quarto 1.6+ 或 Pandoc
+- 发布到 GitHub 时需要 `gh`
+
+## 安装与诊断
+
+```bash
+./scripts/bootstrap.sh
+uv run sciops doctor
+```
+
+## 创建工作包
+
+```bash
+uv run sciops init workspace/demo --title "Demo Study"
+```
+
+生成目录包含 12 项最小工作包、G0–G10 阶段状态和文献/数据/稿件子目录。
+
+## 联网文献检索
+
+无需 key 的 Crossref 检索：
+
+```bash
+uv run sciops literature crossref-search "research question" \
+  --limit 100 \
+  --output workspace/demo/literature/crossref.csv
+```
+
+需要 OpenAlex 的引文网络与开放获取字段时使用 `literature search`。OpenAlex 自 2026-02-13 起要求 API key；将其放在本地环境变量 `OPENALEX_API_KEY` 中，不要写入仓库。
+
+去重：
+
+```bash
+uv run sciops literature dedupe \
+  workspace/demo/literature/openalex.csv \
+  workspace/demo/literature/deduplicated.csv
+```
+
+根据 DOI 获取 BibTeX：
+
+```bash
+uv run sciops literature bibtex 10.0000/example \
+  --output workspace/demo/manuscript/references.bib
+```
+
+## 完成度审计
+
+```bash
+uv run sciops audit workspace/demo
+uv run sciops audit workspace/demo --strict
+```
+
+严格模式用于阶段评审前；模板刚初始化时出现“pending/待填写”是正常现象。
+
+## 网站与论文构建
+
+```bash
+./scripts/render.sh
+```
+
+论文示例位于 `manuscript/paper.qmd`。目标期刊有官方 Quarto 模板时，应在单独分支中应用并人工核验版式。

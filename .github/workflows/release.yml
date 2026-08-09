@@ -1,0 +1,28 @@
+name: Release downloadable bundle
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+      - uses: quarto-dev/quarto-actions/setup@v2
+      - run: uv sync --extra data --group dev --locked
+      - run: uv run ruff check . && uv run pytest
+      - run: quarto render
+      - name: Build safe repository bundle
+        run: uv run sciops package . --output "dist/sci-workflow-os-${GITHUB_REF_NAME}.zip"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "dist/sci-workflow-os-${GITHUB_REF_NAME}.zip" --generate-notes

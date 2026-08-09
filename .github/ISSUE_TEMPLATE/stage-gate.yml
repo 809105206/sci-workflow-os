@@ -1,0 +1,32 @@
+name: G0-G10 阶段门评审
+description: 提交一个阶段的证据和通过决定
+title: "[Stage Gate] G"
+labels: ["stage-gate"]
+body:
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 阶段
+      options: [G0, G1, G2, G3, G4, G5, G6, G7, G8, G9, G10]
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 交付物与可核查证据
+      description: 列出路径、commit、实验 ID、表图或审批记录。
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: 未解决风险与结论边界
+    validations:
+      required: true
+  - type: dropdown
+    id: decision
+    attributes:
+      label: 评审建议
+      options: [Pass, Revise, Block, Stop]
+    validations:
+      required: true

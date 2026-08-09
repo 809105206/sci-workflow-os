@@ -1,0 +1,31 @@
+.env
+.env.*
+!.env.example
+.venv/
+.tools/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+_site/
+.quarto/
+dist/
+build/
+*.egg-info/
+.DS_Store
+Thumbs.db
+
+# Research data and generated assets
+data/raw/
+data/interim/
+models/
+checkpoints/
+*.ckpt
+*.pth
+*.pt
+*.pkl
+
+# Local research workspaces are private by default
+workspace/

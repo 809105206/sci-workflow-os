@@ -1,0 +1,25 @@
+---
+title: "SCI Workflow OS: Example Manuscript"
+author:
+  - name: "SCI Workflow OS contributors"
+date: last-modified
+bibliography: references.bib
+format:
+  html:
+    toc: true
+  docx: default
+---
+
+## Abstract
+
+This is a renderable example. Create a real research workspace with `sciops init` and replace every placeholder with verified project evidence.
+
+## Introduction
+
+## Methods
+
+## Results
+
+## Discussion
+
+## Conclusion

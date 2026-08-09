@@ -1,0 +1,54 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - SCI.md
+    - docs/*.qmd
+  resources:
+    - templates/
+
+website:
+  title: "SCI Workflow OS"
+  site-url: "https://809105206.github.io/sci-workflow-os/"
+  repo-url: "https://github.com/809105206/sci-workflow-os"
+  page-navigation: true
+  repo-actions: [issue]
+  navbar:
+    left:
+      - href: index.qmd
+        text: 首页
+      - href: SCI.md
+        text: SCI 全流程
+      - href: docs/getting-started.qmd
+        text: 快速开始
+      - href: docs/g0-g10-audit.qmd
+        text: 能力审计
+      - href: docs/tooling.qmd
+        text: 工具栈
+      - href: docs/collaboration.qmd
+        text: 协作
+  sidebar:
+    style: docked
+    search: true
+    contents:
+      - index.qmd
+      - SCI.md
+      - section: "使用"
+        contents:
+          - docs/getting-started.qmd
+          - docs/architecture.qmd
+          - docs/collaboration.qmd
+      - section: "治理"
+        contents:
+          - docs/g0-g10-audit.qmd
+          - docs/tooling.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    link-external-newwindow: true
+    lang: zh

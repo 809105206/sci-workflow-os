@@ -1,0 +1,69 @@
+project: "{{PROJECT_TITLE}}"
+updated_at: "{{DATE}}"
+stages:
+  G0:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G1:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G2:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G3:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G4:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G5:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G6:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G7:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G8:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G9:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""
+  G10:
+    status: pending
+    owner: ""
+    reviewed_at: null
+    evidence: []
+    decision: ""

@@ -1,0 +1,63 @@
+---
+title: "{{PROJECT_TITLE}}"
+author:
+  - name: "Author Name"
+date: "{{DATE}}"
+bibliography: references.bib
+format:
+  html:
+    toc: true
+  docx: default
+---
+
+## Abstract
+
+Background. Gap. Objective. Methods. Results with numbers and uncertainty. Bounded conclusion.
+
+## Introduction
+
+### Problem importance
+
+### Existing evidence
+
+### Precise gap
+
+### Objective and contributions
+
+## Methods
+
+### Study design and data
+
+### Outcomes, variables, and preprocessing
+
+### Data split / experimental allocation
+
+### Proposed method and baselines
+
+### Evaluation and statistical analysis
+
+### Robustness and external validation
+
+### Ethics, data, and code availability
+
+## Results
+
+## Discussion
+
+### Principal findings
+
+### Comparison with prior work
+
+### Interpretation and practical implications
+
+### Limitations and applicability
+
+## Conclusion
+
+## Data availability
+
+## Code availability
+
+## Author contributions
+
+## Competing interests

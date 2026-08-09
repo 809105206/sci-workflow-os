@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use SCI Workflow OS, please cite the archived release."
+title: "SCI Workflow OS"
+type: software
+version: 0.1.0
+date-released: 2026-08-09
+authors:
+  - family-names: "Zeng"
+    given-names: "Zihao"
+license: MIT
+repository-code: "https://github.com/809105206/sci-workflow-os"
+url: "https://809105206.github.io/sci-workflow-os/"
+abstract: >-
+  An auditable G0-G10 toolkit for collaborative literature review,
+  reproducible research, scholarly writing, submission, revision, and archiving.
+keywords:
+  - scholarly writing
+  - reproducible research
+  - OpenAlex
+  - Zotero
+  - GitHub

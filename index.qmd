@@ -1,0 +1,36 @@
+---
+title: "SCI Workflow OS"
+subtitle: "从 SCI.md 到可执行、可审计、可协作的科研工作台"
+---
+
+`SCI.md` 定义科研质量标准；本仓库补齐执行层、联网层、协作层和发布层。
+
+## G0–G10 工作台
+
+| 阶段 | 主要任务 | 系统支撑 |
+| --- | --- | --- |
+| G0 | 目标、资源与合规边界 | 项目章程、Issue、阶段门 |
+| G1 | 选题筛选 | 评分表、Topic Proposal Issue |
+| G2 | 文献与缺口 | OpenAlex、Zotero、检索日志、去重 |
+| G3 | 研究方案 | 协议模板、预分析计划、变更记录 |
+| G4 | 数据就绪 | 数据字典、Pandera、DVC、质量报告 |
+| G5 | 核心结果 | 实验登记、固定切分、可复现命令 |
+| G6 | 证据加固 | 消融、稳健性、误差与外部验证清单 |
+| G7 | 成稿 | Quarto、Pandoc、引用和自动构建 |
+| G8 | 选刊与投稿 | 期刊评分卡、投稿包、官方核验门 |
+| G9 | 同行评审 | 回复矩阵、PR 审查和版本差异 |
+| G10 | 发表归档 | Releases、Pages、CITATION.cff、可下载包 |
+
+## 开始使用
+
+```bash
+./scripts/bootstrap.sh
+uv run sciops doctor
+uv run sciops init workspace/my-paper --title "My Paper"
+```
+
+完整说明见[快速开始](docs/getting-started.qmd)，质量标准见[SCI 全流程](SCI.md)。
+
+::: {.callout-warning}
+联网检索只返回候选元数据。引用前必须阅读原文，人工核验 DOI、结论、版本和许可。
+:::

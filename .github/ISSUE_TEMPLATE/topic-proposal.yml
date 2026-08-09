@@ -1,0 +1,36 @@
+name: G1 选题提案
+description: 用统一证据提交候选研究问题
+title: "[G1 Topic] "
+labels: ["G1", "topic"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 真实问题与决策场景
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: 有文献支持的精确缺口
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 最近邻工作与 DOI/链接
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: 数据、独立样本单位、强基线和关键验证
+    validations:
+      required: true
+  - type: dropdown
+    id: decision
+    attributes:
+      label: 建议决定
+      options: [Go, Pivot, Stop]
+    validations:
+      required: true

@@ -1,0 +1,17 @@
+strict: false
+coerce: true
+columns:
+  sample_id:
+    dtype: string
+    nullable: false
+    unique: true
+  group_id:
+    dtype: string
+    nullable: false
+  target:
+    dtype: float
+    nullable: false
+  split:
+    dtype: string
+    nullable: false
+    allowed: [train, validation, test, external]

@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sci-workflow-os"
+version = "0.1.0"
+description = "An auditable G0-G10 workflow toolkit for collaborative SCI research and publishing"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "SCI Workflow OS contributors" }]
+keywords = ["science", "research", "scholarly-writing", "openalex", "zotero", "reproducibility"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "httpx[socks]>=0.28,<1",
+  "pyalex>=0.21,<1",
+  "pyyaml>=6,<7",
+  "pyzotero>=1.13,<2",
+  "rich>=14,<15",
+  "typer>=0.16,<1",
+]
+
+[project.urls]
+Repository = "https://github.com/809105206/sci-workflow-os"
+Documentation = "https://809105206.github.io/sci-workflow-os/"
+
+[project.optional-dependencies]
+data = [
+  "dvc>=3.60,<4",
+  "pandas>=2.2,<4",
+  "pandera[pandas]>=0.25,<1",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8,<10",
+  "pytest-cov>=6,<8",
+  "ruff>=0.12,<1",
+]
+
+[project.scripts]
+sciops = "sciops.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sciops"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]

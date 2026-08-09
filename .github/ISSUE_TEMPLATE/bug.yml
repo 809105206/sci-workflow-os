@@ -1,0 +1,30 @@
+name: 缺陷报告
+description: 报告命令、模板或自动化问题；不要提交密钥或敏感数据
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 最小复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: "`sciops doctor` 非敏感输出"
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 安全确认
+      options:
+        - label: 我已移除令牌、密钥和敏感数据
+          required: true
