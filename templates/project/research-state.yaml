@@ -1,0 +1,15 @@
+schema_version: 1
+project: "{{PROJECT_TITLE}}"
+updated_at: "{{DATE}}"
+research_direction: ""
+active_stage: "G0"
+research_question: ""
+last_completed_action: "Project workspace initialized."
+decisions: []
+blockers: []
+next_actions:
+  - "Complete the one-page project charter and define stop conditions."
+entry_files:
+  - "research-state.yaml"
+  - "01_project_charter.md"
+  - "stage-gates.yaml"

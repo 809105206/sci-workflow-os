@@ -13,6 +13,8 @@
 ## 已具备的能力
 
 - `sciops` 命令行：项目初始化、G0–G10 阶段审计、联网文献检索、去重、DOI/BibTeX 获取和安全打包。
+- Codex 即开即用接管层：`AGENTS.md`、仓库级科研编排 Skill、活动项目指针和 `research-state.yaml` 共同恢复当前阶段与下一动作。
+- CodeGraph 可选本地索引：为 Codex 提供代码结构、调用关系和影响分析，并在文件修改或重新连接时增量同步。
 - Research Console 前端：研究总览、文献纳入决策、稿件实时质检，以及无需安装软件的浏览器科研作图。
 - 12 项最小可复现工作包与 G0–G10 阶段门模板。
 - 项目级通用中文文献模块：OpenAlex 中文过滤自动检索，知网/万方/维普/PubScholar/NSTL/国家哲社中心/ChinaXiv/SinoMed 正式入口，题名/链接/摘要候选预览，下载决策表，以及 Zotero 统一导入、去重与 CSL JSON 引用。
@@ -26,6 +28,18 @@
 - CI：代码测试、结构审计、文档构建和链接检查。
 
 ## 快速开始
+
+### Codex 用户：一次设置后直接说明研究方向
+
+Windows 普通模式双击 `SETUP-CODEX.cmd`。确认信任该仓库并允许自动配置缺失的用户级工具时，双击 `SETUP-CODEX-TRUSTED.cmd`。macOS/Linux 执行：
+
+```bash
+./SETUP-CODEX.sh
+# 可信模式
+./SETUP-CODEX.sh --trusted
+```
+
+设置完成后用 Codex 打开仓库，直接说明研究方向、目标或现有数据。Codex 会先读取 `AGENTS.md`，调用 `sciops codex resume` 恢复活动项目，再从第一项未完成任务继续。系统级权限、登录、凭据、外部发布和不可逆操作不会因可信模式而绕过平台安全边界。完整机制见[Codex 一键接管与连续科研](https://809105206.github.io/sci-workflow-os/docs/codex-takeover.html)。
 
 ### 1. 安装
 
@@ -180,6 +194,9 @@ uv run sciops package workspace/my-paper --output dist/my-paper.zip
 | 路径 | 用途 |
 | --- | --- |
 | `SCI.md` | G0–G10 总规范与质量标准 |
+| `AGENTS.md` | Codex 自动载入的仓库接管、权限与验证协议 |
+| `.agents/skills/run-sci-workflow/` | 随仓库分发的端到端科研编排 Skill |
+| `codex-policy.toml` | 默认自动化与确认边界 |
 | `src/sciops/` | 可执行命令行工具 |
 | `console/` | Research Console 浏览器前端 |
 | `templates/project/` | 可复制研究工作包 |

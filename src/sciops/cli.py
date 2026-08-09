@@ -28,6 +28,13 @@ from sciops.literature import (
     search_openalex,
     write_records,
 )
+from sciops.onboarding import (
+    OnboardingError,
+    activate_project,
+    build_resume_report,
+    checkpoint_project,
+    enable_trusted_mode,
+)
 from sciops.project import initialize_project, package_project
 from sciops.writing import lint_manuscript
 
@@ -41,12 +48,98 @@ zotero_app = typer.Typer(no_args_is_help=True, help="Zotero 文献库连接")
 data_app = typer.Typer(no_args_is_help=True, help="研究数据质量检查")
 writing_app = typer.Typer(no_args_is_help=True, help="陈述句、证据与相关性写作质量门")
 figure_app = typer.Typer(no_args_is_help=True, help="OriginPro 与开放后端科研图表")
+codex_app = typer.Typer(no_args_is_help=True, help="Codex 项目接管、恢复与交接")
 app.add_typer(literature_app, name="literature")
 app.add_typer(zotero_app, name="zotero")
 app.add_typer(data_app, name="data")
 app.add_typer(writing_app, name="writing")
 app.add_typer(figure_app, name="figure")
+app.add_typer(codex_app, name="codex")
 console = Console()
+
+
+@codex_app.command("resume")
+def codex_resume(
+    project: Annotated[
+        Path | None,
+        typer.Argument(help="研究项目目录；省略时使用活动项目"),
+    ] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="输出机器可读 JSON")] = False,
+) -> None:
+    """生成最小接管上下文，避免重新扫描整个仓库。"""
+    try:
+        report = build_resume_report(project)
+    except OnboardingError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    if json_output:
+        console.print_json(json.dumps(report, ensure_ascii=False))
+        return
+    console.print(f"[bold]状态[/bold] {report['status']}")
+    console.print(f"[bold]活动项目[/bold] {report['active_project'] or '未选择'}")
+    if report.get("active_stage"):
+        console.print(f"[bold]当前阶段[/bold] {report['active_stage']}")
+    for action in report.get("next_actions", [report.get("next_action")]):
+        if action:
+            console.print(f"[cyan]NEXT[/cyan] {action}")
+
+
+@codex_app.command("activate")
+def codex_activate(project: Annotated[Path, typer.Argument(help="要设为活动项目的目录")]) -> None:
+    """设置下次 Codex 会话自动恢复的研究项目。"""
+    try:
+        selected = activate_project(project)
+    except OnboardingError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]活动项目[/green] {selected}")
+
+
+@codex_app.command("trust")
+def codex_trust(
+    confirmed: Annotated[bool, typer.Option("--yes", help="确认启用本机可信自动化")] = False,
+) -> None:
+    """为本机启用可信模式；配置文件不会提交或打包。"""
+    if not confirmed:
+        console.print("[yellow]需要 --yes 明确确认。[/yellow]")
+        raise typer.Exit(2)
+    target = enable_trusted_mode()
+    console.print(f"[green]已启用 trusted 模式[/green] {target}")
+    console.print("平台权限、凭据、外部发布和不可逆操作仍受确认边界约束。")
+
+
+@codex_app.command("checkpoint")
+def codex_checkpoint(
+    completed: Annotated[str, typer.Option("--completed", help="本次完成的可核验动作")],
+    project: Annotated[Path | None, typer.Option("--project", help="研究项目目录")] = None,
+    stage: Annotated[str | None, typer.Option("--stage", help="下一活动阶段，如 G2")] = None,
+    next_action: Annotated[
+        list[str] | None,
+        typer.Option("--next", help="有序下一动作，可重复"),
+    ] = None,
+    decision: Annotated[
+        list[str] | None,
+        typer.Option("--decision", help="新增决策，可重复"),
+    ] = None,
+    blocker: Annotated[
+        list[str] | None,
+        typer.Option("--blocker", help="当前阻塞，可重复；不传则保留"),
+    ] = None,
+) -> None:
+    """写入可跨会话恢复的研究交接状态。"""
+    try:
+        target = checkpoint_project(
+            project,
+            completed=completed,
+            stage=stage,
+            next_actions=next_action,
+            decisions=decision,
+            blockers=blocker,
+        )
+    except OnboardingError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]已更新交接状态[/green] {target}")
 
 
 @app.command()

@@ -29,3 +29,8 @@ checkpoints/
 
 # Local research workspaces are private by default
 workspace/
+
+# Local Codex takeover state and CodeGraph index
+.codegraph/
+.sciops-active
+.sciops-local.toml

@@ -1,0 +1,4 @@
+interface:
+  display_name: "SCI Research Orchestrator"
+  short_description: "Resume and run the G0-G10 research workflow"
+  default_prompt: "Resume the active SCI Workflow OS project and continue its first incomplete research action."

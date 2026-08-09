@@ -23,6 +23,15 @@ def _local_tool(name: str) -> Path | None:
     candidates = {
         "gh": (root / ".tools/gh/gh",),
         "quarto": (root / ".tools/quarto/bin/quarto", root / ".tools/quarto/quarto/bin/quarto"),
+        "codegraph": (
+            root / ".tools/codegraph/node_modules/.bin/codegraph",
+            root / ".tools/codegraph/node_modules/.bin/codegraph.cmd",
+            root / ".tools/codegraph-standalone/v1.5.0/bin/codegraph",
+            root
+            / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-x64/bin/codegraph.cmd",
+            root
+            / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-arm64/bin/codegraph.cmd",
+        ),
     }
     for candidate in candidates.get(name, ()):
         if candidate.is_file() and os.access(candidate, os.X_OK):
@@ -32,9 +41,12 @@ def _local_tool(name: str) -> Path | None:
 
 
 def _version(path: Path, *args: str) -> str:
+    command = [str(path), *args]
+    if os.name == "nt" and path.suffix.lower() in {".cmd", ".bat"}:
+        command = [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/s", "/c", *command]
     try:
         process = subprocess.run(
-            [str(path), *args],
+            command,
             check=False,
             capture_output=True,
             text=True,
@@ -84,6 +96,16 @@ def run_checks() -> list[Check]:
                 False,
             )
         )
+
+    codegraph = _local_tool("codegraph")
+    checks.append(
+        Check(
+            "CodeGraph",
+            codegraph is not None,
+            _version(codegraph, "--version") if codegraph else "not installed; optional",
+            False,
+        )
+    )
 
     checks.extend(
         [

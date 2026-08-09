@@ -1,0 +1,14 @@
+schema_version = 1
+mode = "guided"
+
+[automation]
+project_dependencies = true
+codegraph_index = true
+tests_and_builds = true
+system_packages = false
+
+[always_confirm]
+credentials = true
+external_publish = true
+destructive_actions = true
+paid_actions = true

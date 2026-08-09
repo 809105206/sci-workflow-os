@@ -41,6 +41,8 @@ ALLOWED_STAGE_STATUSES = {"pending", "in_progress", "blocked", "passed"}
 
 SENSITIVE_NAMES = {
     ".env",
+    ".sciops-active",
+    ".sciops-local.toml",
     "credentials.json",
     "secrets.json",
     "token.json",
@@ -49,6 +51,7 @@ SENSITIVE_NAMES = {
 }
 
 EXCLUDED_DIR_NAMES = {
+    ".codegraph",
     ".git",
     ".venv",
     ".tools",

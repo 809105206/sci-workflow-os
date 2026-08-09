@@ -17,6 +17,7 @@ def test_initialize_project(tmp_path: Path, monkeypatch) -> None:
     assert (destination / "writing-style.yaml").exists()
     assert (destination / ".vale.ini").exists()
     assert (destination / "figures/rop-effect.example.yaml").exists()
+    assert (destination / "research-state.yaml").exists()
 
 
 def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
@@ -27,8 +28,12 @@ def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
     (source / "workspace/private-study").mkdir(parents=True)
     (source / "console/node_modules/package").mkdir(parents=True)
     (source / "console/dist").mkdir(parents=True)
+    (source / ".codegraph").mkdir(parents=True)
     (source / "notes.md").write_text("public", encoding="utf-8")
     (source / ".env").write_text("TOKEN=secret", encoding="utf-8")
+    (source / ".sciops-active").write_text("workspace/private-study", encoding="utf-8")
+    (source / ".sciops-local.toml").write_text('mode = "trusted"', encoding="utf-8")
+    (source / ".codegraph/index.db").write_text("generated", encoding="utf-8")
     (source / "data/raw/private.csv").write_text("secret", encoding="utf-8")
     (source / ".quarto/idx/cache.json").write_text("generated", encoding="utf-8")
     (source / ".dvc/config").write_text("[core]", encoding="utf-8")
@@ -43,6 +48,9 @@ def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
     assert "notes.md" in names
     assert "MANIFEST.sha256" in names
     assert ".env" not in names
+    assert ".sciops-active" not in names
+    assert ".sciops-local.toml" not in names
+    assert ".codegraph/index.db" not in names
     assert "data/raw/private.csv" not in names
     assert ".quarto/idx/cache.json" not in names
     assert ".dvc/config" in names

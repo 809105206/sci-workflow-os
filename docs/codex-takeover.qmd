@@ -1,0 +1,89 @@
+---
+title: "Codex 一键接管与连续科研"
+---
+
+SCI Workflow OS 将 Codex 接管信息直接保存在仓库中。研究者完成一次安装后，只需用 Codex 打开仓库并说明研究方向，Codex 即可恢复活动项目、检查环境、定位当前 G0–G10 阶段并继续第一项未完成动作。
+
+## Windows 一次性配置
+
+普通模式只配置已有工具能够支持的项目能力：
+
+```text
+双击 SETUP-CODEX.cmd
+```
+
+研究者明确允许自动配置缺失的用户级工具时，可以双击：
+
+```text
+SETUP-CODEX-TRUSTED.cmd
+```
+
+可信配置写入未提交的 `.sciops-local.toml`。它允许 Codex 自动完成项目目录内、可逆、来源固定的依赖安装、测试和 CodeGraph 索引。操作系统管理员权限、账号登录、凭据、付费、外部发布、删除和不可逆操作仍受 Codex 与操作系统的确认边界约束。
+
+## macOS 与 Linux
+
+```bash
+chmod +x SETUP-CODEX.sh
+./SETUP-CODEX.sh
+```
+
+可信模式使用：
+
+```bash
+./SETUP-CODEX.sh --trusted
+```
+
+## Codex 如何立即理解项目
+
+接管链包含四层：
+
+1. `AGENTS.md` 在 Codex 开始工作前自动载入，规定启动顺序、证据边界、权限和完成门槛。
+2. `.agents/skills/run-sci-workflow/SKILL.md` 在检索、选题、研究设计、分析、写作、投稿或返修任务中触发。
+3. 活动研究项目的 `research-state.yaml` 保存研究方向、当前阶段、最后完成动作、决策、阻塞项和有序下一动作。
+4. `sciops codex resume --json` 将状态、环境和必要入口文件压缩为一次机器可读交接，不要求 Codex重新扫描整个仓库。
+
+Codex 启动后执行：
+
+```bash
+uv run --frozen sciops codex resume --json
+```
+
+没有活动项目且用户已经说明方向时，Codex创建并激活一个研究工作区：
+
+```bash
+uv run sciops init workspace/my-study --title "研究题目"
+uv run sciops codex activate workspace/my-study
+```
+
+完成一个里程碑后写入交接状态：
+
+```bash
+uv run sciops codex checkpoint \
+  --completed "完成双语检索式和试检索" \
+  --stage G2 \
+  --next "执行正式检索并保存检索日志" \
+  --next "生成题名、摘要和正规落地页候选池"
+```
+
+## CodeGraph 的职责
+
+CodeGraph 在本机建立代码符号、调用和依赖图，并通过项目级 MCP 提供给 Codex。项目文件保存后由监听器增量更新；Codex重新连接时会补齐离线修改。索引位于未提交的 `.codegraph/`，不上传源码，也不进入 Release 包。
+
+CodeGraph 只负责代码结构。研究问题、文献决策、阶段状态和下一动作仍以 `research-state.yaml` 与阶段门为准。
+
+受限环境、批处理或手动拉取更新后可以运行：
+
+```text
+Windows: 双击 SYNC-CODEX.cmd
+macOS/Linux: ./SYNC-CODEX.sh
+```
+
+## 日常使用
+
+项目完成一次设置后，研究者可以直接对 Codex陈述：
+
+```text
+研究方向是高维钻井参数扰动对机械钻速的因果影响，先完成选题验证和中英文文献检索。
+```
+
+Codex将自动恢复状态、检查缺失能力、建立或续接项目，并按当前阶段推进。研究者只需要处理必须由人决定的事项，包括数据授权、全文获取、纳入排除判断、研究伦理、关键科学决策和最终投稿确认。

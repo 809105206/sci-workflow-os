@@ -28,6 +28,8 @@ website:
         text: MCP
       - href: docs/research-console.qmd
         text: 前端
+      - href: docs/codex-takeover.qmd
+        text: Codex 接管
       - href: docs/writing-quality.qmd
         text: 写作质检
       - href: docs/figures.qmd
@@ -50,6 +52,7 @@ website:
           - docs/chinese-literature.qmd
           - docs/mcp.qmd
           - docs/research-console.qmd
+          - docs/codex-takeover.qmd
           - docs/writing-quality.qmd
           - docs/figures.qmd
           - docs/architecture.qmd

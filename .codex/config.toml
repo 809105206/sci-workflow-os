@@ -13,3 +13,16 @@ env_vars = [
 startup_timeout_sec = 20
 tool_timeout_sec = 90
 default_tools_approval_mode = "writes"
+
+# Optional local code index. SETUP-CODEX installs it under .tools/ and this
+# wrapper exits cleanly when it has not been installed yet.
+[mcp_servers.codegraph]
+command = "uv"
+args = ["run", "--frozen", "python", "scripts/codegraph-mcp.py"]
+cwd = "."
+startup_timeout_sec = 30
+tool_timeout_sec = 90
+default_tools_approval_mode = "approve"
+enabled_tools = [
+  "codegraph_explore",
+]
