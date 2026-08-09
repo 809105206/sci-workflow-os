@@ -47,12 +47,22 @@ uv run sciops literature crossref-search \
   --output workspace/my-paper/literature/crossref.csv
 ```
 
-Crossref 检索无需 key。需要 OpenAlex 的引文网络与开放获取字段时，使用 `literature search`；OpenAlex 自 2026-02-13 起要求 API key，应先申请免费 key，再在未提交的 `.env` 或终端环境中设置：
+Crossref 检索无需 key。需要 OpenAlex 的引文网络与开放获取字段时，使用 `literature search`；OpenAlex 自 2026-02-13 起要求 API key，应先申请免费 key。CLI 会从当前目录或其父目录自动读取未提交的 `.env`：
 
 ```bash
-export OPENALEX_EMAIL="you@example.com"
-export OPENALEX_API_KEY="your-key"
+cp .env.example .env
+# 编辑 .env，填写 OPENALEX_API_KEY；不要将真实密钥提交到 Git。
+uv run sciops doctor
 ```
+
+PowerShell 可用 `Copy-Item .env.example .env`。已在终端设置的环境变量优先于 `.env`，适合 CI/CD 使用。
+
+凭据申请入口：
+
+- OpenAlex：登录 [API settings](https://openalex.org/settings/api) 后创建免费 key，填入 `OPENALEX_API_KEY`。
+- Zotero：登录 [API Keys](https://www.zotero.org/settings/keys)，创建仅供本工具使用的 private key。只拉取文献时授予 library read access 即可；同一页面显示的数字 user ID 填入 `ZOTERO_LIBRARY_ID`，生成的 key 填入 `ZOTERO_API_KEY`。个人库保持 `ZOTERO_LIBRARY_TYPE=user`；群组库改为 `group` 并使用数字 group ID。
+
+真实凭据只保存在本机 `.env` 或 CI 的加密 Secrets 中，不要放入 issue、聊天、README、命令历史或 Git 提交。
 
 ### 5. 审计阶段完成度
 

@@ -35,7 +35,7 @@ uv run sciops literature crossref-search "research question" \
   --output workspace/demo/literature/crossref.csv
 ```
 
-需要 OpenAlex 的引文网络与开放获取字段时使用 `literature search`。OpenAlex 自 2026-02-13 起要求 API key；将其放在本地环境变量 `OPENALEX_API_KEY` 中，不要写入仓库。
+需要 OpenAlex 的引文网络与开放获取字段时使用 `literature search`。OpenAlex 自 2026-02-13 起要求 API key；复制 `.env.example` 为 `.env`，填写 `OPENALEX_API_KEY`。CLI 会从当前目录或其父目录自动加载该文件；`.env` 已被 Git 忽略，不要强制提交。
 
 去重：
 

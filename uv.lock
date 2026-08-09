@@ -2415,6 +2415,7 @@ source = { editable = "." }
 dependencies = [
     { name = "httpx", extra = ["socks"] },
     { name = "pyalex" },
+    { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "pyzotero" },
     { name = "rich" },
@@ -2442,6 +2443,7 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'data'", specifier = ">=2.2,<4" },
     { name = "pandera", extras = ["pandas"], marker = "extra == 'data'", specifier = ">=0.25,<1" },
     { name = "pyalex", specifier = ">=0.21,<1" },
+    { name = "python-dotenv", specifier = ">=1.1,<2" },
     { name = "pyyaml", specifier = ">=6,<7" },
     { name = "pyzotero", specifier = ">=1.13,<2" },
     { name = "rich", specifier = ">=14,<15" },

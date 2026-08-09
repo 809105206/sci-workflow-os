@@ -64,12 +64,17 @@ def run_checks() -> list[Check]:
     gh = _local_tool("gh")
     checks.append(Check("gh", gh is not None, _version(gh, "--version") if gh else "not found"))
     if gh:
+        gh_env = os.environ.copy()
+        local_config = repository_root() / ".tools/gh-config"
+        if local_config.is_dir():
+            gh_env["GH_CONFIG_DIR"] = str(local_config)
         auth = subprocess.run(
             [str(gh), "auth", "status"],
             check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             timeout=10,
+            env=gh_env,
         )
         checks.append(
             Check(

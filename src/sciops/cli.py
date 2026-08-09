@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from dotenv import find_dotenv, load_dotenv
 from rich.console import Console
 from rich.table import Table
 
@@ -20,6 +21,10 @@ from sciops.literature import (
     write_records,
 )
 from sciops.project import initialize_project, package_project
+
+dotenv_path = find_dotenv(usecwd=True)
+if dotenv_path:
+    load_dotenv(dotenv_path)
 
 app = typer.Typer(no_args_is_help=True, help="SCI Workflow OS: G0-G10 可执行科研工作流")
 literature_app = typer.Typer(no_args_is_help=True, help="联网文献检索、去重和引用")
