@@ -17,6 +17,7 @@ def test_mcp_exposes_generic_chinese_literature_tools() -> None:
     assert {
         "list_chinese_sources",
         "search_chinese_literature",
+        "preview_chinese_candidates",
         "zotero_collections",
         "zotero_collection_records",
     } <= tool_names

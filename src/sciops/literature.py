@@ -33,6 +33,24 @@ LITERATURE_FIELDS = (
     "retrieved_at",
 )
 
+PREVIEW_DECISION_FIELDS = (
+    "candidate_id",
+    "title",
+    "publication_year",
+    "source",
+    "doi",
+    "citation_url",
+    "abstract_status",
+    "abstract_language",
+    "relevance_score",
+    "matched_terms",
+    "decision",
+    "decision_reason",
+    "full_text_status",
+    "reviewer",
+    "reviewed_at",
+)
+
 
 def _abstract_from_inverted_index(index: dict[str, list[int]] | None) -> str:
     if not index:
@@ -230,6 +248,270 @@ def write_records(records: Iterable[dict], output: Path) -> Path:
         writer.writeheader()
         writer.writerows(records)
     return output
+
+
+def _clean_metadata_text(value: object) -> str:
+    text = re.sub(r"<[^>]+>", " ", str(value or ""))
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _split_terms(value: str) -> list[str]:
+    terms = []
+    for term in re.split(r"[,，;；|]", value):
+        cleaned = _clean_metadata_text(term).casefold()
+        if cleaned and cleaned not in terms:
+            terms.append(cleaned)
+    return terms
+
+
+def _abstract_language(value: str) -> str:
+    if not value:
+        return "未知"
+    chinese = len(re.findall(r"[\u3400-\u9fff]", value))
+    latin = len(re.findall(r"[A-Za-z]", value))
+    if chinese >= max(5, latin // 2):
+        return "中文" if latin < chinese else "中英混合"
+    if latin >= 5:
+        return "英文"
+    return "未知"
+
+
+def _abstract_status(value: str) -> str:
+    if not value:
+        return "缺失"
+    if len(value) < 80:
+        return f"较短（{len(value)} 字符）"
+    return f"可用（{len(value)} 字符）"
+
+
+def _citation_url(record: dict) -> str:
+    landing_page = _clean_metadata_text(record.get("landing_page"))
+    if landing_page.startswith(("https://", "http://")):
+        return landing_page
+    doi = _normalize_doi(str(record.get("doi") or ""))
+    if doi.startswith("10.") and "/" in doi:
+        return f"https://doi.org/{doi}"
+    return ""
+
+
+def prepare_candidate_previews(
+    records: Iterable[dict],
+    *,
+    required_groups: Iterable[str] = (),
+    preferred_terms: Iterable[str] = (),
+    limit: int = 20,
+    abstract_chars: int = 600,
+) -> list[dict[str, str | int | bool]]:
+    """Filter and rank citation metadata without downloading article full text.
+
+    Each required group is a comma-separated OR group. Every non-empty group must match at
+    least one term. Preferred terms affect ranking but never exclude a record.
+    """
+    if limit < 1 or limit > 1_000:
+        raise ValueError("limit 必须在 1 到 1000 之间")
+    if abstract_chars < 80 or abstract_chars > 10_000:
+        raise ValueError("abstract_chars 必须在 80 到 10000 之间")
+
+    parsed_groups = [_split_terms(group) for group in required_groups]
+    parsed_groups = [group for group in parsed_groups if group]
+    preferred = []
+    for group in preferred_terms:
+        for term in _split_terms(group):
+            if term not in preferred:
+                preferred.append(term)
+
+    ranked: list[dict[str, str | int | bool]] = []
+    normalized_records = [dict(record) for record in records]
+    for record in _deduplicate_rows(normalized_records):
+        title = _clean_metadata_text(record.get("title"))
+        abstract = _clean_metadata_text(record.get("abstract"))
+        keywords = _clean_metadata_text(record.get("keywords"))
+        source = _clean_metadata_text(record.get("source"))
+        title_folded = title.casefold()
+        details_folded = " ".join((abstract, keywords, source)).casefold()
+
+        matched: list[str] = []
+        score = 0
+        rejected = False
+        for group in parsed_groups:
+            group_matches = [
+                term for term in group if term in title_folded or term in details_folded
+            ]
+            if not group_matches:
+                rejected = True
+                break
+            for term in group_matches:
+                if term not in matched:
+                    matched.append(term)
+                score += 10 if term in title_folded else 5
+        if rejected:
+            continue
+
+        for term in preferred:
+            if term in title_folded:
+                score += 5
+                if term not in matched:
+                    matched.append(term)
+            elif term in details_folded:
+                score += 2
+                if term not in matched:
+                    matched.append(term)
+
+        if abstract:
+            score += 2
+        if _normalize_doi(str(record.get("doi") or "")):
+            score += 1
+        if source:
+            score += 1
+
+        preview = dict(record)
+        preview.update(
+            {
+                "title": title,
+                "abstract": abstract,
+                "citation_url": _citation_url(record),
+                "abstract_status": _abstract_status(abstract),
+                "abstract_language": _abstract_language(abstract),
+                "abstract_preview": (
+                    abstract
+                    if len(abstract) <= abstract_chars
+                    else f"{abstract[:abstract_chars].rstrip()}……"
+                ),
+                "abstract_truncated": len(abstract) > abstract_chars,
+                "relevance_score": score,
+                "matched_terms": "; ".join(matched),
+            }
+        )
+        ranked.append(preview)
+
+    def rank_key(record: dict) -> tuple[int, int, int, str]:
+        try:
+            year = int(record.get("publication_year") or 0)
+        except (TypeError, ValueError):
+            year = 0
+        try:
+            cited = int(record.get("cited_by_count") or 0)
+        except (TypeError, ValueError):
+            cited = 0
+        return (
+            -int(record.get("relevance_score") or 0),
+            -year,
+            -cited,
+            str(record.get("title") or ""),
+        )
+
+    ranked.sort(key=rank_key)
+    selected = ranked[:limit]
+    for index, record in enumerate(selected, start=1):
+        record["candidate_id"] = f"CN-{index:03d}"
+    return selected
+
+
+def _markdown_value(value: object) -> str:
+    return _clean_metadata_text(value).replace("[", "\\[").replace("]", "\\]")
+
+
+def write_candidate_preview(records: Iterable[dict], output: Path) -> tuple[Path, int]:
+    records = list(records)
+    output = output.expanduser().resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "# 中文文献候选预览",
+        "",
+        (
+            "> 本清单只用于题名/摘要初筛；摘要可能来自聚合元数据或人工转述。"
+            "决定引用前必须读取原文，核验题录、方法、结果和版本。"
+        ),
+        "",
+    ]
+    if not records:
+        lines.extend(["没有候选记录。请放宽必含概念组或更换短检索词。", ""])
+    for record in records:
+        candidate_id = _markdown_value(record.get("candidate_id"))
+        title = _markdown_value(record.get("title")) or "（无题名）"
+        authors = _markdown_value(record.get("authors")) or "作者待核验"
+        year = _markdown_value(record.get("publication_year")) or "年份待核验"
+        source = _markdown_value(record.get("source")) or "来源待核验"
+        doi = _markdown_value(record.get("doi")) or "无 DOI/待核验"
+        url = str(record.get("citation_url") or "").replace(")", "%29")
+        abstract = _markdown_value(record.get("abstract_preview")) or "元数据中没有摘要。"
+        truncated = "（已截断）" if record.get("abstract_truncated") else ""
+        matched = _markdown_value(record.get("matched_terms")) or "未设置偏好词"
+        lines.extend(
+            [
+                f"## {candidate_id}　{title}",
+                "",
+                f"- 题录：{authors}. {title}[J]. {source}, {year}.",
+                f"- DOI：{doi}",
+                f"- 引用地址：<{url}>" if url else "- 引用地址：缺失，需人工补齐",
+                (
+                    "- 摘要状态："
+                    f"{_markdown_value(record.get('abstract_status'))}；"
+                    f"{_markdown_value(record.get('abstract_language'))}{truncated}"
+                ),
+                (
+                    "- 匹配："
+                    f"{_markdown_value(record.get('relevance_score'))} 分；{matched}"
+                ),
+                f"- 摘要/摘要概述：{abstract}",
+                "- 下载决定：`待定`（可改为 `下载` / `跳过` / `稍后`）",
+                "",
+            ]
+        )
+    output.write_text("\n".join(lines), encoding="utf-8")
+    return output, len(records)
+
+
+def write_download_decisions(records: Iterable[dict], output: Path) -> tuple[Path, int]:
+    records = list(records)
+    output = output.expanduser().resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=PREVIEW_DECISION_FIELDS, extrasaction="ignore")
+        writer.writeheader()
+        for record in records:
+            row = dict(record)
+            row.update(
+                {
+                    "decision": "待定",
+                    "decision_reason": "",
+                    "full_text_status": "未获取",
+                    "reviewer": "",
+                    "reviewed_at": "",
+                }
+            )
+            writer.writerow(row)
+    return output, len(records)
+
+
+def preview_csv(
+    source: Path,
+    preview_output: Path,
+    decisions_output: Path,
+    *,
+    required_groups: Iterable[str] = (),
+    preferred_terms: Iterable[str] = (),
+    limit: int = 20,
+    abstract_chars: int = 600,
+) -> tuple[Path, Path, int]:
+    source = source.expanduser().resolve()
+    with source.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames or "title" not in reader.fieldnames:
+            raise ValueError("输入 CSV 至少需要 title 表头")
+        records = list(reader)
+    if not records:
+        raise ValueError("输入 CSV 没有记录")
+    previews = prepare_candidate_previews(
+        records,
+        required_groups=required_groups,
+        preferred_terms=preferred_terms,
+        limit=limit,
+        abstract_chars=abstract_chars,
+    )
+    preview_path, _ = write_candidate_preview(previews, preview_output)
+    decisions_path, count = write_download_decisions(previews, decisions_output)
+    return preview_path, decisions_path, count
 
 
 def _normalize_doi(value: str) -> str:

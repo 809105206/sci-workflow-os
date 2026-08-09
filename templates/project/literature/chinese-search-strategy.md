@@ -78,6 +78,19 @@ language:zh
 screening:pending / screening:include / screening:exclude
 ```
 
+若暂时没有全文权限，先根据题名、引用地址和摘要生成预览，不要求下载全文：
+
+```bash
+uv run sciops literature preview literature/combined.csv \
+  --require "A1,A2,A3" --require "B1,B2" \
+  --prefer "C1,C2" \
+  --output literature/chinese-candidate-preview.md \
+  --decisions literature/chinese-download-decisions.csv
+```
+
+在决策表中把 `decision` 改为 `下载`、`跳过` 或 `稍后` 并填写理由。摘要筛选通过只代表值得
+获取全文，不能直接进入正文论证。
+
 ## 6. 合并、去重与引用插入
 
 ```bash

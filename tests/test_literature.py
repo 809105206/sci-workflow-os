@@ -11,6 +11,8 @@ from sciops.literature import (
     _zotero_year,
     deduplicate_csv,
     merge_csv,
+    prepare_candidate_previews,
+    preview_csv,
     pull_zotero_csl_json,
 )
 
@@ -130,3 +132,70 @@ def test_zotero_csl_json_export_preserves_chinese_metadata(
 
     assert count == 1
     assert json.loads(output.read_text(encoding="utf-8")) == items
+
+
+def test_candidate_preview_filters_concept_groups_and_ranks_preferences() -> None:
+    records = [
+        {
+            "title": "基于机器学习的机械钻速预测",
+            "publication_year": "2024",
+            "source": "钻井期刊",
+            "doi": "10.1/rop",
+            "abstract": "使用钻压、转速和排量等钻井参数建立机械钻速预测模型。" * 5,
+            "keywords": "机械钻速; 机器学习",
+        },
+        {
+            "title": "机械钻速经验模型",
+            "publication_year": "2025",
+            "source": "钻井期刊",
+            "abstract": "研究机械钻速。" * 10,
+            "keywords": "机械钻速",
+        },
+        {
+            "title": "城市交通速度预测",
+            "publication_year": "2026",
+            "source": "交通期刊",
+            "abstract": "与钻井无关。" * 10,
+            "keywords": "机器学习",
+        },
+    ]
+
+    previews = prepare_candidate_previews(
+        records,
+        required_groups=["机械钻速,钻速", "钻井,钻井参数"],
+        preferred_terms=["机器学习,因果推断"],
+        limit=10,
+        abstract_chars=80,
+    )
+
+    assert [record["candidate_id"] for record in previews] == ["CN-001", "CN-002"]
+    assert previews[0]["title"] == "基于机器学习的机械钻速预测"
+    assert previews[0]["abstract_truncated"] is True
+    assert "机器学习" in str(previews[0]["matched_terms"])
+    assert previews[0]["citation_url"] == "https://doi.org/10.1/rop"
+
+
+def test_preview_csv_writes_markdown_and_download_decisions(tmp_path: Path) -> None:
+    source = tmp_path / "records.csv"
+    source.write_text(
+        "title,publication_year,source,authors,landing_page,abstract,keywords\n"
+        "双重机器学习方法,2025,方法期刊,张三,https://example.cn/dml,"
+        "双重机器学习用于高维因果推断并控制大量混杂变量。双重机器学习用于高维因果推断。,"
+        "双重机器学习;因果推断\n",
+        encoding="utf-8",
+    )
+
+    preview, decisions, count = preview_csv(
+        source,
+        tmp_path / "preview.md",
+        tmp_path / "decisions.csv",
+        required_groups=["双重机器学习,DML"],
+    )
+
+    assert count == 1
+    assert "CN-001" in preview.read_text(encoding="utf-8")
+    assert "https://example.cn/dml" in preview.read_text(encoding="utf-8")
+    with decisions.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    assert rows[0]["decision"] == "待定"
+    assert rows[0]["full_text_status"] == "未获取"

@@ -12,11 +12,16 @@ SCI Workflow OS 使用 [MCP 官方 Python SDK](https://github.com/modelcontextpr
 | --- | --- | --- | --- |
 | `list_chinese_sources` | 返回中文数据库链接、覆盖、权限与导入路径 | 否 | 否 |
 | `search_chinese_literature` | OpenAlex 中文语言过滤和年份检索 | 是 | 否 |
+| `preview_chinese_candidates` | 检索、概念组过滤、相关性排序并返回题名/地址/摘要 | 是 | 否 |
 | `zotero_collections` | 列出已配置 Zotero collections | 是 | 否 |
 | `zotero_collection_records` | 读取并标准化 Zotero 顶层题录 | 是 | 否 |
 
 服务还提供 `sciops://chinese-literature/sources` 资源和通用中文检索计划 prompt。全部工具都标记为
 只读、幂等；MCP 不直接抓取知网、万方或维普。
+
+`preview_chinese_candidates` 适合让支持 MCP 的助手先显示候选，由研究者决定哪些值得下载。
+`required_groups` 中每个字符串是一组逗号分隔的同义词（组内 OR、组间 AND），
+`preferred_terms` 只用于排序；返回摘要缺失状态，不伪造摘要或全文结论。
 
 ## Codex 项目级配置
 

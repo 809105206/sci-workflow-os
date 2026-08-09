@@ -18,6 +18,7 @@ from sciops.literature import (
     deduplicate_csv,
     list_zotero_collections,
     merge_csv,
+    preview_csv,
     pull_zotero_csl_json,
     pull_zotero_csv,
     pull_zotero_json,
@@ -177,6 +178,52 @@ def literature_search_cn(
         raise typer.Exit(2) from exc
     console.print(f"[green]已保存 {len(records)} 条中文记录[/green] {path}")
     console.print("语言标注可能不完整；仍需在中文专业库补检，并回到原文核验。")
+
+
+@literature_app.command("preview")
+def literature_preview(
+    source: Annotated[Path, typer.Argument(help="OpenAlex、Zotero 或合并后的标准 CSV")],
+    required: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--require",
+            help="必含概念组；组内逗号表示 OR，可重复指定以表达 AND",
+        ),
+    ] = None,
+    preferred: Annotated[
+        list[str] | None,
+        typer.Option("--prefer", help="排序偏好词；逗号表示 OR，可重复指定"),
+    ] = None,
+    limit: Annotated[int, typer.Option("--limit", "-n", min=1, max=1_000)] = 20,
+    abstract_chars: Annotated[
+        int,
+        typer.Option("--abstract-chars", min=80, max=10_000, help="每条摘要预览字符数"),
+    ] = 600,
+    output: Annotated[Path, typer.Option("--output", "-o", help="Markdown 候选预览")] = Path(
+        "literature/chinese-candidate-preview.md"
+    ),
+    decisions: Annotated[
+        Path,
+        typer.Option("--decisions", help="可编辑的下载决策 CSV"),
+    ] = Path("literature/chinese-download-decisions.csv"),
+) -> None:
+    """只用题名、引用地址和摘要生成候选预览，不下载全文。"""
+    try:
+        preview_path, decisions_path, count = preview_csv(
+            source,
+            output,
+            decisions,
+            required_groups=required or (),
+            preferred_terms=preferred or (),
+            limit=limit,
+            abstract_chars=abstract_chars,
+        )
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]候选预览生成失败：{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]已生成 {count} 条候选[/green] {preview_path}")
+    console.print(f"[green]下载决策表[/green] {decisions_path}")
+    console.print("先把 decision 改为 下载/跳过/稍后；只有读取原文后才能进入正式引用。")
 
 
 @literature_app.command("chinese-sources")

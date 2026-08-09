@@ -10,7 +10,7 @@
 
 - `sciops` 命令行：项目初始化、G0–G10 阶段审计、联网文献检索、去重、DOI/BibTeX 获取和安全打包。
 - 12 项最小可复现工作包与 G0–G10 阶段门模板。
-- 项目级通用中文文献模块：OpenAlex 中文过滤自动检索，知网/万方/维普/PubScholar/NSTL/国家哲社中心/ChinaXiv/SinoMed 正式入口，Zotero 统一导入、去重与 CSL JSON 引用。
+- 项目级通用中文文献模块：OpenAlex 中文过滤自动检索，知网/万方/维普/PubScholar/NSTL/国家哲社中心/ChinaXiv/SinoMed 正式入口，题名/链接/摘要候选预览，下载决策表，以及 Zotero 统一导入、去重与 CSL JSON 引用。
 - 本地只读 MCP：Codex/兼容客户端可调用中文来源目录、OpenAlex 中文检索和 Zotero collections/题录；API 密钥仅从本地环境变量读取。
 - DVC/Pandera 可选数据栈：数据版本、实验管线与表格数据验证。
 - Quarto/Pandoc 写作栈：默认生成网页与 Word；安装 TinyTeX 后可启用 PDF。
@@ -86,6 +86,11 @@ uv run sciops literature merge \
   workspace/my-paper/literature/zotero-cn.csv \
   workspace/my-paper/literature/openalex-zh.csv \
   --output workspace/my-paper/literature/combined.csv
+uv run sciops literature preview workspace/my-paper/literature/combined.csv \
+  --require "研究对象同义词1,研究对象同义词2" \
+  --prefer "方法词1,方法词2" \
+  --output workspace/my-paper/literature/chinese-candidate-preview.md \
+  --decisions workspace/my-paper/literature/chinese-download-decisions.csv
 uv run sciops zotero export-csl --collection COLLECTION_KEY \
   --output workspace/my-paper/manuscript/references.json
 ```
@@ -101,7 +106,7 @@ uv run sciops zotero export-csl --collection COLLECTION_KEY \
 uv run --frozen sciops-mcp
 ```
 
-直接启动后保持安静并等待输入是正常现象。配置、四个只读工具、凭据边界和远程部署说明见[中文文献 MCP 接入](https://809105206.github.io/sci-workflow-os/docs/mcp.html)。
+直接启动后保持安静并等待输入是正常现象。配置、五个只读工具、凭据边界和远程部署说明见[中文文献 MCP 接入](https://809105206.github.io/sci-workflow-os/docs/mcp.html)。
 
 ### 5. 审计阶段完成度
 

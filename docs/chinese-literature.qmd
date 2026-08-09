@@ -75,6 +75,32 @@ uv run sciops literature search-cn "你的中文主题词" \
 该命令调用 OpenAlex 并固定 `language=zh`，输出与 Crossref/Zotero 相同的标准字段。OpenAlex 的
 中文覆盖和语言识别并不完整，所以输出为空或数量偏少不表示“没有中文研究”。
 
+## 无全文权限时：先预览，再决定下载
+
+题名、正规落地页和摘要通常足以完成第一轮相关性判断。先对 OpenAlex、Zotero 或合并后的标准
+CSV 生成候选卡片和下载决策表，不访问或下载论文全文：
+
+```bash
+uv run sciops literature preview literature/combined.csv \
+  --require "机械钻速,钻速,ROP" \
+  --prefer "钻井参数,钻压,转速,机器学习,因果推断" \
+  --limit 30 \
+  --output literature/chinese-candidate-preview.md \
+  --decisions literature/chinese-download-decisions.csv
+```
+
+`--require` 可重复使用：每个参数是一组以逗号连接的 `OR` 词组，多组之间是 `AND`。例如
+`--require "钻井,钻井工程" --require "机械钻速,ROP"` 要求两个概念块都命中。`--prefer`
+只改变排序，不排除记录，适合加入方法词。
+
+预览包含候选编号、临时题录、DOI/引用地址、摘要完整度/语言、匹配词和摘要片段；决策表的
+`decision` 初始为 `待定`，人工改为 `下载`、`跳过` 或 `稍后`。摘要缺失会明确显示，工具不会
+补写或推测。摘要初筛通过不等于论文支持研究论点，只有获取、阅读并核验原文后才能进入正式
+引用和证据矩阵。
+
+这个模式特别适合数据库权限不完整、跨机构协作或希望先控制下载量的项目。题名、摘要和引用
+链接可以进入私有协作表；受限全文仍不得上传到公开 GitHub、Pages 或 Release。
+
 ## 授权数据库 → Zotero → 统一题录
 
 推荐流程：

@@ -13,6 +13,7 @@ def test_initialize_project(tmp_path: Path, monkeypatch) -> None:
     chinese_strategy = destination / "literature/chinese-search-strategy.md"
     assert chinese_strategy.exists()
     assert "Test Study" in chinese_strategy.read_text(encoding="utf-8")
+    assert (destination / "literature/chinese-download-decisions.csv").exists()
 
 
 def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:

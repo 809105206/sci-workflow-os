@@ -10,6 +10,7 @@ from sciops.chinese_sources import list_chinese_literature_sources
 from sciops.literature import (
     get_zotero_records,
     list_zotero_collections,
+    prepare_candidate_previews,
     search_chinese_openalex,
 )
 
@@ -60,6 +61,50 @@ def search_chinese_literature(
         limit=limit,
         from_year=from_year,
         to_year=to_year,
+    )
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    )
+)
+def preview_chinese_candidates(
+    query: str,
+    limit: int = 20,
+    fetch_limit: int = 100,
+    from_year: int | None = None,
+    to_year: int | None = None,
+    required_groups: list[str] | None = None,
+    preferred_terms: list[str] | None = None,
+    abstract_chars: int = 600,
+) -> list[dict[str, str | int | bool]]:
+    """Search and rank Chinese citation candidates without downloading article full text.
+
+    Use comma-separated alternatives inside each required group. Every required group must
+    match; preferred terms only influence ranking.
+    """
+    if limit < 1 or limit > 1_000:
+        raise ValueError("limit 必须在 1 到 1000 之间")
+    if fetch_limit < 1 or fetch_limit > 10_000:
+        raise ValueError("fetch_limit 必须在 1 到 10000 之间")
+    if fetch_limit < limit:
+        raise ValueError("fetch_limit 不能小于 limit")
+    records = search_chinese_openalex(
+        query,
+        limit=fetch_limit,
+        from_year=from_year,
+        to_year=to_year,
+    )
+    return prepare_candidate_previews(
+        records,
+        required_groups=required_groups or (),
+        preferred_terms=preferred_terms or (),
+        limit=limit,
+        abstract_chars=abstract_chars,
     )
 
 
