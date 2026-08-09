@@ -62,6 +62,7 @@ EXCLUDED_DIR_NAMES = {
     "raw",
     "interim",
     "models",
+    "node_modules",
     "checkpoints",
     "workspace",
 }

@@ -4,16 +4,23 @@
 [![Documentation](https://github.com/809105206/sci-workflow-os/actions/workflows/pages.yml/badge.svg)](https://809105206.github.io/sci-workflow-os/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**公开 Research Console：<https://809105206.github.io/sci-workflow-os/console/>**
+
+**即时部署：<https://sci-workflow-console.z809105206.chatgpt.site>**
+
 一个以 `SCI.md` 为总规范、以 GitHub 为协作中枢的开源科研工作台。它把选题、文献、方案、数据、实验、写作、选刊、投稿、返修和发表归档从“说明文档”变成可执行、可审计、可分享、可下载的工作流。
 
 ## 已具备的能力
 
 - `sciops` 命令行：项目初始化、G0–G10 阶段审计、联网文献检索、去重、DOI/BibTeX 获取和安全打包。
+- Research Console 前端：研究总览、文献纳入决策、稿件实时质检和图表后端选择。
 - 12 项最小可复现工作包与 G0–G10 阶段门模板。
 - 项目级通用中文文献模块：OpenAlex 中文过滤自动检索，知网/万方/维普/PubScholar/NSTL/国家哲社中心/ChinaXiv/SinoMed 正式入口，题名/链接/摘要候选预览，下载决策表，以及 Zotero 统一导入、去重与 CSL JSON 引用。
 - 本地只读 MCP：Codex/兼容客户端可调用中文来源目录、OpenAlex 中文检索和 Zotero collections/题录；API 密钥仅从本地环境变量读取。
 - DVC/Pandera 可选数据栈：数据版本、实验管线与表格数据验证。
 - Quarto/Pandoc 写作栈：默认生成网页与 Word；安装 TinyTeX 后可启用 PDF。
+- 标准化写作质量门：正文仅使用陈述句，阻断疑问句、对话式元话语和占位符，并提示无证据强化与模板化表达。
+- OriginPro 可选自动化：Windows 上调用官方 `originpro`；Linux、macOS 与 CI 使用 Matplotlib/Plotly 后备链。
 - GitHub Issues、Pull Requests、Actions、Pages 与 Releases：多人协作、在线站点和版本下载。
 - CI：代码测试、结构审计、文档构建和链接检查。
 
@@ -26,6 +33,14 @@
 ```
 
 该脚本使用 `uv` 创建隔离环境，并安装默认能力和数据工具。不会把 API 密钥写入仓库。
+
+浏览器前端可以直接使用在线版本，也可以在本地运行：
+
+```bash
+./scripts/start-console.sh
+```
+
+Release 下载包已经包含构建完成的前端。Windows 解压后双击 `OPEN-CONSOLE.cmd`；macOS/Linux 执行 `./OPEN-CONSOLE.sh`。脚本只在本机启动静态网页，不上传研究数据或密钥。
 
 ### 2. 检查环境
 
@@ -115,6 +130,22 @@ uv run sciops audit workspace/my-paper
 uv run sciops audit workspace/my-paper --strict
 ```
 
+稿件标准化质检：
+
+```bash
+uv run sciops writing lint workspace/my-paper/manuscript/paper.qmd --strict
+```
+
+科研图表：
+
+```bash
+uv sync --extra figures
+uv run sciops figure doctor
+uv run sciops figure render \
+  workspace/my-paper/figures/rop-effect.example.yaml \
+  --backend auto
+```
+
 普通模式检查结构；严格模式还检查阶段状态、空文件和未完成占位符。
 
 数据质量验证：
@@ -145,6 +176,7 @@ uv run sciops package workspace/my-paper --output dist/my-paper.zip
 | --- | --- |
 | `SCI.md` | G0–G10 总规范与质量标准 |
 | `src/sciops/` | 可执行命令行工具 |
+| `console/` | Research Console 浏览器前端 |
 | `templates/project/` | 可复制研究工作包 |
 | `.codex/config.toml` | 可分享的项目级本地 MCP 配置 |
 | `manuscript/` | Quarto 论文示例与参考文献 |

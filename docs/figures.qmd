@@ -1,0 +1,35 @@
+---
+title: "OriginPro 与开放图表后端"
+---
+
+SCI Workflow OS 使用统一 YAML 图形规范描述数据列、图型、坐标轴、置信区间和输出格式。同一规范可以交给 OriginPro、Matplotlib 或 Plotly，从而避免把图形参数散落在手工操作记录中。
+
+## 检查后端
+
+```bash
+uv run sciops figure doctor
+```
+
+## 生成图表
+
+```bash
+uv sync --extra figures
+uv run sciops figure render \
+  workspace/my-paper/figures/rop-effect.example.yaml \
+  --backend matplotlib
+```
+
+`--backend auto` 会在装有 Origin 2021+ 与官方 `originpro` 包的 Windows 上优先使用 OriginPro，其他系统回退到 Matplotlib。Plotly 可生成交互 HTML，并可通过 Kaleido 导出静态格式。
+
+## OriginPro 接入边界
+
+OriginLab 提供的是 Python 自动化接口，而不是独立于 Origin 的跨平台 CLI。本项目的 `sciops figure render --backend origin` 是该接口的命令行适配器。它需要 Windows、Origin 2021 或更高版本，以及可选依赖：
+
+```bash
+uv sync --extra origin
+uv run sciops figure render figures/rop-effect.example.yaml \
+  --backend origin \
+  --project outputs/figures/rop-effect.opju
+```
+
+Linux、macOS 和 CI 环境使用 Matplotlib/Plotly 后备链。项目始终保存原始 CSV、YAML 规范和导出图，因此图形具有可复核来源。

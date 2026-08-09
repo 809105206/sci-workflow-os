@@ -19,7 +19,16 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version-file: .python-version
-      - run: uv sync --extra data --group dev --locked
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - run: uv sync --extra data --extra figures --group dev --locked
       - run: uv run ruff check .
       - run: uv run pytest
       - run: uv run sciops audit templates/project
+      - run: npm ci
+        working-directory: console
+      - run: npm run build
+        working-directory: console

@@ -26,6 +26,12 @@ website:
         text: 中文文献
       - href: docs/mcp.qmd
         text: MCP
+      - href: docs/research-console.qmd
+        text: 前端
+      - href: docs/writing-quality.qmd
+        text: 写作质检
+      - href: docs/figures.qmd
+        text: 科研图表
       - href: docs/g0-g10-audit.qmd
         text: 能力审计
       - href: docs/tooling.qmd
@@ -43,6 +49,9 @@ website:
           - docs/getting-started.qmd
           - docs/chinese-literature.qmd
           - docs/mcp.qmd
+          - docs/research-console.qmd
+          - docs/writing-quality.qmd
+          - docs/figures.qmd
           - docs/architecture.qmd
           - docs/collaboration.qmd
       - section: "治理"

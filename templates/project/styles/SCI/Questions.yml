@@ -1,0 +1,6 @@
+extends: existence
+message: "正文只允许陈述句；将疑问句改写为研究目标、假设或结果。"
+level: error
+scope: sentence
+raw:
+  - '[?？]'

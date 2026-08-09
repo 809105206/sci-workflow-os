@@ -1,0 +1,20 @@
+---
+title: "Research Console 前端"
+---
+
+Research Console 是 SCI Workflow OS 的浏览器工作台，面向研究者提供四个集中入口：
+
+公开入口：<https://809105206.github.io/sci-workflow-os/console/>。即时部署入口：<https://sci-workflow-console.z809105206.chatgpt.site>。
+
+- 研究总览展示 G0–G10 阶段、当前项目成熟度和本地活动。
+- 文献雷达对中英文候选题名、期刊、DOI、摘要相关度和下载决策进行筛选。
+- 写作质检实时显示陈述句、对话式表达、元话语、空泛强化和占位符问题。
+- 图表工坊在 OriginPro、Matplotlib、Plotly 与 ECharts 预览之间选择后端和输出格式。
+
+前端源码位于 `console/`。它不嵌入 OpenAlex 或 Zotero 密钥，实际联网写入仍由本地 CLI/MCP 完成。该边界避免把私人文献库凭据暴露到浏览器静态资源或公共仓库。
+
+```bash
+./scripts/start-console.sh
+```
+
+Release 下载包包含已经构建的 `console/dist/`。Windows 解压后双击 `OPEN-CONSOLE.cmd`，macOS/Linux 执行 `./OPEN-CONSOLE.sh`。该启动器使用 Python 标准库在本机提供静态页面，不需要把 API 密钥写入浏览器代码。

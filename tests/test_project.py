@@ -14,6 +14,9 @@ def test_initialize_project(tmp_path: Path, monkeypatch) -> None:
     assert chinese_strategy.exists()
     assert "Test Study" in chinese_strategy.read_text(encoding="utf-8")
     assert (destination / "literature/chinese-download-decisions.csv").exists()
+    assert (destination / "writing-style.yaml").exists()
+    assert (destination / ".vale.ini").exists()
+    assert (destination / "figures/rop-effect.example.yaml").exists()
 
 
 def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
@@ -22,6 +25,8 @@ def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
     (source / ".quarto/idx").mkdir(parents=True)
     (source / ".dvc/tmp").mkdir(parents=True)
     (source / "workspace/private-study").mkdir(parents=True)
+    (source / "console/node_modules/package").mkdir(parents=True)
+    (source / "console/dist").mkdir(parents=True)
     (source / "notes.md").write_text("public", encoding="utf-8")
     (source / ".env").write_text("TOKEN=secret", encoding="utf-8")
     (source / "data/raw/private.csv").write_text("secret", encoding="utf-8")
@@ -29,6 +34,8 @@ def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
     (source / ".dvc/config").write_text("[core]", encoding="utf-8")
     (source / ".dvc/tmp/runtime").write_text("generated", encoding="utf-8")
     (source / "workspace/private-study/notes.md").write_text("secret", encoding="utf-8")
+    (source / "console/node_modules/package/index.js").write_text("generated", encoding="utf-8")
+    (source / "console/dist/index.html").write_text("console", encoding="utf-8")
 
     result = package_project(source, tmp_path / "package.zip")
     with zipfile.ZipFile(result.output) as archive:
@@ -41,3 +48,5 @@ def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
     assert ".dvc/config" in names
     assert ".dvc/tmp/runtime" not in names
     assert "workspace/private-study/notes.md" not in names
+    assert "console/node_modules/package/index.js" not in names
+    assert "console/dist/index.html" in names

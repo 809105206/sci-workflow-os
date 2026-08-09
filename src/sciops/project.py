@@ -79,7 +79,8 @@ def _should_skip(relative: Path, output: Path, source: Path) -> str | None:
         (".dvc", "tmp"),
     }:
         return "DVC runtime data"
-    if any(part in EXCLUDED_DIR_NAMES for part in relative.parts[:-1]):
+    built_console = relative.parts[:2] == ("console", "dist")
+    if not built_console and any(part in EXCLUDED_DIR_NAMES for part in relative.parts[:-1]):
         return "excluded directory"
     env_variant = relative.name.startswith(".env.") and relative.name != ".env.example"
     if relative.name in SENSITIVE_NAMES or env_variant:
@@ -87,6 +88,8 @@ def _should_skip(relative: Path, output: Path, source: Path) -> str | None:
     lowered = relative.name.lower()
     if any(token in lowered for token in ("secret", "credential", "private-key", "api-key")):
         return "potential secret"
+    if relative.suffix.lower() == ".tsbuildinfo":
+        return "build cache"
     if relative.suffix.lower() in {".pt", ".pth", ".ckpt", ".key", ".pem"}:
         return "model or private-key asset"
     try:

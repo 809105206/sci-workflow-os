@@ -1,0 +1,33 @@
+version: 1
+profile: SCI Declarative
+scope: manuscript
+requirements:
+  sentence_mood: declarative
+  questions_allowed: false
+  direct_address_allowed: false
+  generation_meta_allowed: false
+  placeholders_allowed_at_submission: false
+  quantitative_claims_require:
+    - effect_size_or_estimate
+    - uncertainty_or_variability
+    - figure_table_or_verifiable_citation
+  paragraph_relevance:
+    - research_problem
+    - method
+    - result
+    - interpretation
+    - limitation
+    - reproducibility_or_ethics
+revision_policy:
+  preserve_exactly:
+    - numbers
+    - units
+    - equations
+    - citations
+    - variable_names
+  never_invent:
+    - evidence
+    - references
+    - methods
+    - results
+  human_review_required: true

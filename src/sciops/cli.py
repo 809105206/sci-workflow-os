@@ -13,6 +13,7 @@ from sciops.audit import audit_project
 from sciops.chinese_sources import list_chinese_literature_sources
 from sciops.data import DataValidationError, validate_csv
 from sciops.doctor import run_checks
+from sciops.figures import FigureError, available_backends, load_figure_spec, render_figure
 from sciops.literature import (
     append_bibtex,
     deduplicate_csv,
@@ -28,6 +29,7 @@ from sciops.literature import (
     write_records,
 )
 from sciops.project import initialize_project, package_project
+from sciops.writing import lint_manuscript
 
 dotenv_path = find_dotenv(usecwd=True)
 if dotenv_path:
@@ -37,9 +39,13 @@ app = typer.Typer(no_args_is_help=True, help="SCI Workflow OS: G0-G10 可执行�
 literature_app = typer.Typer(no_args_is_help=True, help="联网文献检索、去重和引用")
 zotero_app = typer.Typer(no_args_is_help=True, help="Zotero 文献库连接")
 data_app = typer.Typer(no_args_is_help=True, help="研究数据质量检查")
+writing_app = typer.Typer(no_args_is_help=True, help="陈述句、证据与相关性写作质量门")
+figure_app = typer.Typer(no_args_is_help=True, help="OriginPro 与开放后端科研图表")
 app.add_typer(literature_app, name="literature")
 app.add_typer(zotero_app, name="zotero")
 app.add_typer(data_app, name="data")
+app.add_typer(writing_app, name="writing")
+app.add_typer(figure_app, name="figure")
 console = Console()
 
 
@@ -117,6 +123,82 @@ def data_validate_csv(
                 console.print(f"[yellow]FAIL[/yellow] {case}")
         raise typer.Exit(2) from exc
     console.print(f"[green]PASS[/green] {result.rows} rows × {result.columns} columns")
+
+
+@writing_app.command("lint")
+def writing_lint(
+    manuscript: Annotated[Path, typer.Argument(help="Markdown 或 Quarto 稿件")],
+    strict: Annotated[bool, typer.Option(help="警告也阻断通过")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON")] = False,
+) -> None:
+    """检查疑问句、对话式元话语、占位符、空泛强化与模板化表达。"""
+    try:
+        result = lint_manuscript(manuscript, strict=strict)
+    except OSError as exc:
+        console.print(f"[red]稿件读取失败：{exc}[/red]")
+        raise typer.Exit(2) from exc
+    if json_output:
+        console.print_json(json.dumps(result.as_dict(), ensure_ascii=False))
+    else:
+        table = Table(title=f"Writing gate · {result.source.name}")
+        table.add_column("级别")
+        table.add_column("行")
+        table.add_column("规则")
+        table.add_column("命中")
+        table.add_column("修订要求")
+        for issue in result.issues:
+            color = "red" if issue.severity == "error" else "yellow"
+            table.add_row(
+                f"[{color}]{issue.severity.upper()}[/{color}]",
+                str(issue.line),
+                issue.rule,
+                issue.match,
+                issue.message,
+            )
+        console.print(table)
+        console.print(
+            f"规范分 {result.score}；{result.errors} errors；{result.warnings} warnings"
+        )
+        console.print("[green]PASS[/green]" if result.passed else "[red]FAIL[/red]")
+    if not result.passed:
+        raise typer.Exit(1)
+
+
+@figure_app.command("doctor")
+def figure_doctor() -> None:
+    """检查 OriginPro、Matplotlib 与 Plotly 渲染后端。"""
+    table = Table(title="Figure backends")
+    table.add_column("后端")
+    table.add_column("状态")
+    table.add_column("说明")
+    for name, item in available_backends().items():
+        status = "[green]OK[/green]" if item["available"] else "[yellow]UNAVAILABLE[/yellow]"
+        table.add_row(name, status, str(item["detail"]))
+    console.print(table)
+
+
+@figure_app.command("render")
+def figure_render(
+    specification: Annotated[Path, typer.Argument(help="YAML 图形规范")],
+    backend: Annotated[
+        str,
+        typer.Option(help="auto、origin、matplotlib 或 plotly"),
+    ] = "auto",
+    project: Annotated[
+        Path | None,
+        typer.Option("--project", help="可选 Origin OPJU 项目路径"),
+    ] = None,
+) -> None:
+    """用统一规范生成投稿图表；Origin 不可用时可复现地回退到开放后端。"""
+    try:
+        spec = load_figure_spec(specification)
+        selected, outputs = render_figure(spec, backend=backend, project=project)
+    except (OSError, FigureError) as exc:
+        console.print(f"[red]图表生成失败：{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]已使用 {selected} 生成 {len(outputs)} 个文件[/green]")
+    for output in outputs:
+        console.print(output)
 
 
 @app.command("package")

@@ -1,0 +1,15 @@
+extends: existence
+message: "删除生成过程、对话指令或结构播报：'%s'。"
+level: error
+ignorecase: true
+tokens:
+  - '作为(?:一个)?AI'
+  - '根据您的要求'
+  - '以下是'
+  - '下面将'
+  - '让我们'
+  - '如有需要'
+  - 'as an AI'
+  - 'as requested'
+  - 'I hope this helps'
+  - 'let us'

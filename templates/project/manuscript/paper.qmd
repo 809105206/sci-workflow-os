@@ -12,7 +12,7 @@ format:
 
 ## Abstract
 
-Background. Gap. Objective. Methods. Results with numbers and uncertainty. Bounded conclusion.
+The abstract states the background, precise evidence gap, objective, methods, numerical results with uncertainty, and a bounded conclusion.
 
 ## Introduction
 
@@ -61,3 +61,5 @@ Background. Gap. Objective. Methods. Results with numbers and uncertainty. Bound
 ## Author contributions
 
 ## Competing interests
+
+<!-- 提交前执行：sciops writing lint manuscript/paper.qmd --strict -->

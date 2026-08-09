@@ -18,7 +18,7 @@ if ! command -v quarto >/dev/null 2>&1 && [[ ! -x "$project_dir/.tools/quarto/bi
   "$project_dir/scripts/install-quarto.sh"
 fi
 
-uv sync --extra data --group dev
+uv sync --extra data --extra figures --group dev
 uv run sciops audit templates/project
 uv run pytest
 
