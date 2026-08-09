@@ -9,7 +9,7 @@ Research Console 是 SCI Workflow OS 的浏览器工作台，面向研究者提�
 - 研究总览展示 G0–G10 阶段、当前项目成熟度和本地活动。
 - 文献雷达对中英文候选题名、期刊、DOI、摘要相关度和下载决策进行筛选。
 - 写作质检实时显示陈述句、对话式表达、元话语、空泛强化和占位符问题。
-- 图表工坊在 OriginPro、Matplotlib、Plotly 与 ECharts 预览之间选择后端和输出格式。
+- 图表工坊直接在浏览器本地读取 CSV，选择 X/Y 列与图形类型，并导出 SVG、PNG、CSV 和复现 YAML。
 
 前端源码位于 `console/`。它不嵌入 OpenAlex 或 Zotero 密钥，实际联网写入仍由本地 CLI/MCP 完成。该边界避免把私人文献库凭据暴露到浏览器静态资源或公共仓库。
 
@@ -17,4 +17,6 @@ Research Console 是 SCI Workflow OS 的浏览器工作台，面向研究者提�
 ./scripts/start-console.sh
 ```
 
-Release 下载包包含已经构建的 `console/dist/`。Windows 解压后双击 `OPEN-CONSOLE.cmd`，macOS/Linux 执行 `./OPEN-CONSOLE.sh`。该启动器使用 Python 标准库在本机提供静态页面，不需要把 API 密钥写入浏览器代码。
+Release 下载包根目录包含 `SCI-WORKFLOW-CONSOLE.html`。该文件已经内联应用代码与样式，Windows、macOS 和 Linux 均可直接双击运行，不依赖 Python 或本地服务。`OPEN-CONSOLE.cmd` 与 `OPEN-CONSOLE.sh` 会优先打开同一单文件应用，并在旧版下载包中回退到本地静态服务。
+
+单文件模式可以离线完成作图与写作规则检查。OpenAlex、Zotero 和授权数据库操作仍由本地 CLI/MCP 处理，浏览器包不嵌入 API 密钥。图表工坊只在内存中读取用户选择的 CSV，偏好设置保存在本机浏览器中。

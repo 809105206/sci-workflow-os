@@ -128,6 +128,11 @@ def package_project(source: Path, output: Path, *, max_file_mib: int = 100) -> P
             archive.writestr(relative.as_posix(), content)
             result.included.append(relative.as_posix())
             manifest.append(f"{digest}  {relative.as_posix()}")
+            if relative.as_posix() == "console/dist/index.html":
+                offline_name = "SCI-WORKFLOW-CONSOLE.html"
+                archive.writestr(offline_name, content)
+                result.included.append(offline_name)
+                manifest.append(f"{digest}  {offline_name}")
         archive.writestr("MANIFEST.sha256", "\n".join(manifest) + "\n")
 
     return result

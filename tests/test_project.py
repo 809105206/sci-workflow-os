@@ -50,3 +50,4 @@ def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
     assert "workspace/private-study/notes.md" not in names
     assert "console/node_modules/package/index.js" not in names
     assert "console/dist/index.html" in names
+    assert "SCI-WORKFLOW-CONSOLE.html" in names

@@ -241,7 +241,7 @@ def render_figure(
 ) -> tuple[str, tuple[Path, ...]]:
     backend = backend.lower()
     if backend == "auto":
-        backend = "origin" if available_backends()["origin"]["available"] else "matplotlib"
+        backend = "matplotlib"
     if backend == "origin":
         return backend, render_origin(spec, project=project)
     if backend == "matplotlib":

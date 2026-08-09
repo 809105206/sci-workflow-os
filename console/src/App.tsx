@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import FigureStudio from "./FigureStudio";
 
 type View = "overview" | "literature" | "writing" | "figures";
 type Decision = "待判断" | "纳入" | "排除";
@@ -20,7 +21,7 @@ const stages = [
   { id: "G4", title: "数据治理", detail: "变量字典、缺失机制与版本记录", state: "next" },
   { id: "G5", title: "模型与估计", detail: "扰动参数、异质效应与稳健性", state: "next" },
   { id: "G6", title: "结果复核", detail: "安慰剂、敏感性与外推边界", state: "next" },
-  { id: "G7", title: "图表生成", detail: "OriginPro 或开放后备链", state: "next" },
+  { id: "G7", title: "图表生成", detail: "浏览器作图与开放批量工具链", state: "next" },
   { id: "G8", title: "论文写作", detail: "陈述句、证据约束与去模板化", state: "next" },
   { id: "G9", title: "投稿质检", detail: "期刊适配、清单与可复现包", state: "next" },
   { id: "G10", title: "投稿响应", detail: "审稿意见矩阵与版本归档", state: "next" },
@@ -67,7 +68,6 @@ export default function App() {
   const [language, setLanguage] = useState("全部");
   const [decisions, setDecisions] = useState<Record<number, Decision>>({ 1: "纳入", 2: "纳入" });
   const [draft, setDraft] = useState(initialDraft);
-  const [backend, setBackend] = useState("OriginPro");
   const [notice, setNotice] = useState("本地工作流已就绪");
 
   const filteredPapers = useMemo(() => papers.filter((paper) => {
@@ -136,39 +136,18 @@ export default function App() {
     }
 
     if (view === "figures") {
-      const backends = [
-        { name: "OriginPro", tag: "Windows", detail: "官方 originpro 自动化；导出 OPJU、PDF、SVG、PNG。" },
-        { name: "Matplotlib", tag: "跨平台", detail: "本地与 CI 的可复现静态图后备链。" },
-        { name: "Plotly", tag: "交互", detail: "生成 HTML 探索图，并支持静态格式导出。" },
-        { name: "ECharts", tag: "前端", detail: "用于浏览器预览和结果交互，不替代投稿原图。" },
-      ];
       return (
         <section className="view-shell">
-          <div className="view-heading"><div><p className="eyebrow">Figure laboratory</p><h1>图表工坊</h1><p>同一份数据和图形规范可选择 OriginPro 或开放后端渲染。</p></div><button className="primary-button" onClick={() => setNotice(`已创建 ${backend} 渲染任务`)}>生成图表</button></div>
-          <div className="figure-grid">
-            <div className="panel chart-panel">
-              <div className="panel-title"><span>扰动参数的条件效应</span><small>95% 置信区间</small></div>
-              <div className="chart-area" role="img" aria-label="钻压扰动与机械钻速条件效应示例图">
-                <div className="y-label">ROP 效应 (m/h)</div>
-                <svg viewBox="0 0 720 330" aria-hidden="true">
-                  <g className="grid-lines"><line x1="70" y1="45" x2="690" y2="45"/><line x1="70" y1="110" x2="690" y2="110"/><line x1="70" y1="175" x2="690" y2="175"/><line x1="70" y1="240" x2="690" y2="240"/><line x1="70" y1="305" x2="690" y2="305"/></g>
-                  <line className="zero-line" x1="70" y1="240" x2="690" y2="240"/>
-                  <path className="confidence" d="M90 241 C180 225, 245 201, 315 165 S465 102, 540 90 S625 76,680 60 L680 112 C620 126,570 131,520 141 S410 177,330 218 S180 276,90 286 Z" />
-                  <path className="effect-line" d="M90 263 C175 250,245 224,315 192 S455 131,530 116 S625 99,680 86" />
-                  {[[90,263],[180,248],[270,215],[360,170],[450,137],[540,114],[625,100],[680,86]].map(([x,y]) => <circle className="effect-point" cx={x} cy={y} r="5" key={`${x}-${y}`}/>)}
-                  <g className="axis-labels"><text x="82" y="325">−15</text><text x="224" y="325">−10</text><text x="373" y="325">−5</text><text x="526" y="325">0</text><text x="673" y="325">5</text></g>
-                </svg>
-                <div className="x-label">钻压扰动 (%)</div>
-              </div>
-              <div className="chart-caption"><i /><span>双重机器学习估计</span><em>阴影区域表示 95% 置信区间</em></div>
-            </div>
-            <aside className="panel backend-panel">
-              <div className="panel-title"><span>渲染后端</span><small>可替换</small></div>
-              <div className="backend-list">{backends.map((item) => <button onClick={() => setBackend(item.name)} className={backend === item.name ? "selected" : ""} key={item.name}><span className="radio"><i /></span><div><strong>{item.name}<small>{item.tag}</small></strong><p>{item.detail}</p></div></button>)}</div>
-              <div className="export-box"><span>输出格式</span><div>{["PDF", "SVG", "PNG", backend === "OriginPro" ? "OPJU" : "HTML"].map((format) => <b key={format}>{format}</b>)}</div></div>
-            </aside>
+          <div className="view-heading">
+            <div><p className="eyebrow">Figure laboratory</p><h1>零安装图表工坊</h1><p>选择 CSV、指定 X/Y 变量并导出投稿图，整个过程不需要 OriginPro、MATLAB 或 Python。</p></div>
+            <span className="privacy-badge"><i />浏览器本地处理</span>
           </div>
-          <div className="command-card"><div><span>可复现命令</span><code>sciops figure render figures/rop-effect.yaml --backend {backend.toLowerCase()}</code></div><button onClick={() => setNotice("命令已准备，可在本地终端执行")}>复制命令</button></div>
+          <FigureStudio onNotice={setNotice} />
+          <div className="install-paths">
+            <article className="recommended"><span>默认方案</span><h3>浏览器作图</h3><p>双击单文件即可运行，支持 CSV、折线图、散点图、柱状图、SVG、PNG 和复现 YAML。</p><b>零安装</b></article>
+            <article><span>批量复现</span><h3>Python 开放工具链</h3><p>一键安装 Matplotlib 与 Plotly，适合批量制图、CI 和论文复现包。</p><b>INSTALL-PLOTTING</b></article>
+            <article><span>高级可选</span><h3>OriginPro 适配器</h3><p>仅在已有 Windows 与 Origin 许可证时启用，不作为项目必要条件。</p><b>可选</b></article>
+          </div>
         </section>
       );
     }

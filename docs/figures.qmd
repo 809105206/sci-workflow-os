@@ -1,16 +1,38 @@
 ---
-title: "OriginPro 与开放图表后端"
+title: "零安装作图与开放图表后端"
 ---
 
-SCI Workflow OS 使用统一 YAML 图形规范描述数据列、图型、坐标轴、置信区间和输出格式。同一规范可以交给 OriginPro、Matplotlib 或 Plotly，从而避免把图形参数散落在手工操作记录中。
+SCI Workflow OS 提供三个彼此独立的层级。默认层级是双击即可运行的浏览器图表工坊；批量复现层级使用 Matplotlib 与 Plotly；已有商业软件许可证的用户可以选择 OriginPro 适配器。常规科研作图不要求 OriginPro 或 MATLAB。
 
-## 检查后端
+## 默认层级：双击离线作图
+
+Release 包根目录中的 `SCI-WORKFLOW-CONSOLE.html` 是完整的单文件应用。双击后选择 CSV，指定 X/Y 列和图形类型，即可导出：
+
+- SVG 矢量图，适合在 Inkscape、Illustrator 或期刊排版流程中继续编辑。
+- 1800 × 1100 PNG，适合预览、汇报和常规投稿附件。
+- 规范化 CSV，保留当前读取到的数据表。
+- YAML 图形规范，记录数据文件名、变量、图型、图题和坐标轴标题。
+
+该模式不启动本地服务，不安装依赖，也不上传 CSV。研究者仍需检查单位、有效数字、误差表示、色彩可辨识性和期刊尺寸要求。
+
+## 批量层级：一键安装开放环境
+
+Windows 用户双击 `INSTALL-PLOTTING.cmd`。macOS 与 Linux 用户在解压目录执行：
+
+```bash
+chmod +x INSTALL-PLOTTING.sh
+./INSTALL-PLOTTING.sh
+```
+
+安装器使用 uv 管理 Python 3.12 和项目隔离环境，并安装 Matplotlib、Plotly 与静态导出支持。安装完成后可直接运行统一 YAML 图形规范。
+
+### 检查后端
 
 ```bash
 uv run sciops figure doctor
 ```
 
-## 生成图表
+### 生成图表
 
 ```bash
 uv sync --extra figures
@@ -19,7 +41,7 @@ uv run sciops figure render \
   --backend matplotlib
 ```
 
-`--backend auto` 会在装有 Origin 2021+ 与官方 `originpro` 包的 Windows 上优先使用 OriginPro，其他系统回退到 Matplotlib。Plotly 可生成交互 HTML，并可通过 Kaleido 导出静态格式。
+`--backend auto` 默认使用 Matplotlib。Plotly 可生成交互 HTML，并可通过 Kaleido 导出静态格式。CSV 与 YAML 规范共同构成可复现来源。
 
 ## OriginPro 接入边界
 
@@ -32,4 +54,4 @@ uv run sciops figure render figures/rop-effect.example.yaml \
   --project outputs/figures/rop-effect.opju
 ```
 
-Linux、macOS 和 CI 环境使用 Matplotlib/Plotly 后备链。项目始终保存原始 CSV、YAML 规范和导出图，因此图形具有可复核来源。
+Linux、macOS 和 CI 环境使用 Matplotlib/Plotly 开放工具链。项目始终保存原始 CSV、YAML 规范和导出图，因此图形具有可复核来源。

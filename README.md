@@ -13,14 +13,15 @@
 ## 已具备的能力
 
 - `sciops` 命令行：项目初始化、G0–G10 阶段审计、联网文献检索、去重、DOI/BibTeX 获取和安全打包。
-- Research Console 前端：研究总览、文献纳入决策、稿件实时质检和图表后端选择。
+- Research Console 前端：研究总览、文献纳入决策、稿件实时质检，以及无需安装软件的浏览器科研作图。
 - 12 项最小可复现工作包与 G0–G10 阶段门模板。
 - 项目级通用中文文献模块：OpenAlex 中文过滤自动检索，知网/万方/维普/PubScholar/NSTL/国家哲社中心/ChinaXiv/SinoMed 正式入口，题名/链接/摘要候选预览，下载决策表，以及 Zotero 统一导入、去重与 CSL JSON 引用。
 - 本地只读 MCP：Codex/兼容客户端可调用中文来源目录、OpenAlex 中文检索和 Zotero collections/题录；API 密钥仅从本地环境变量读取。
 - DVC/Pandera 可选数据栈：数据版本、实验管线与表格数据验证。
 - Quarto/Pandoc 写作栈：默认生成网页与 Word；安装 TinyTeX 后可启用 PDF。
 - 标准化写作质量门：正文仅使用陈述句，阻断疑问句、对话式元话语和占位符，并提示无证据强化与模板化表达。
-- OriginPro 可选自动化：Windows 上调用官方 `originpro`；Linux、macOS 与 CI 使用 Matplotlib/Plotly 后备链。
+- 零门槛图表工坊：单个离线 HTML 本地读取 CSV，导出 SVG、PNG、清洗 CSV 和可复现 YAML，不依赖 OriginPro、MATLAB 或 Python。
+- 开放批量绘图：Windows、macOS 与 Linux 一键安装 uv、Python 3.12、Matplotlib 和 Plotly；OriginPro 仅作为已有许可证用户的可选适配器。
 - GitHub Issues、Pull Requests、Actions、Pages 与 Releases：多人协作、在线站点和版本下载。
 - CI：代码测试、结构审计、文档构建和链接检查。
 
@@ -34,13 +35,15 @@
 
 该脚本使用 `uv` 创建隔离环境，并安装默认能力和数据工具。不会把 API 密钥写入仓库。
 
-浏览器前端可以直接使用在线版本，也可以在本地运行：
+浏览器前端可以直接使用在线版本，也可以在本地开发模式运行：
 
 ```bash
 ./scripts/start-console.sh
 ```
 
-Release 下载包已经包含构建完成的前端。Windows 解压后双击 `OPEN-CONSOLE.cmd`；macOS/Linux 执行 `./OPEN-CONSOLE.sh`。脚本只在本机启动静态网页，不上传研究数据或密钥。
+Release 下载包根目录包含 `SCI-WORKFLOW-CONSOLE.html`。双击该文件即可独立运行图表工坊和其他前端页面，不需要命令行、Python、网络或安装过程。CSV 只在当前浏览器中处理，不会上传。`OPEN-CONSOLE.cmd` 和 `OPEN-CONSOLE.sh` 保留为兼容入口。
+
+需要批量制图、脚本复现或 CI 时，Windows 双击 `INSTALL-PLOTTING.cmd`；macOS/Linux 执行 `./INSTALL-PLOTTING.sh`。安装器为当前项目配置隔离的开源绘图环境，不要求 OriginPro 或 MATLAB。
 
 ### 2. 检查环境
 
@@ -145,6 +148,8 @@ uv run sciops figure render \
   workspace/my-paper/figures/rop-effect.example.yaml \
   --backend auto
 ```
+
+首次使用者可跳过上述命令，直接双击 `SCI-WORKFLOW-CONSOLE.html` 完成 CSV 作图。需要开放批量绘图环境时，再运行对应系统的 `INSTALL-PLOTTING` 一键安装器。
 
 普通模式检查结构；严格模式还检查阶段状态、空文件和未完成占位符。
 

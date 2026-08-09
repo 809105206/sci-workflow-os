@@ -1,7 +1,7 @@
 {
   "name": "sci-workflow-console",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -9,6 +9,7 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "echarts": "^6.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -17,6 +18,7 @@
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",
     "typescript": "^7.0.2",
-    "vite": "^8.2.1"
+    "vite": "^8.2.1",
+    "vite-plugin-singlefile": "^2.3.3"
   }
 }
