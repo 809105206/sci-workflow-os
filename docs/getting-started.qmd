@@ -52,6 +52,26 @@ uv run sciops literature bibtex 10.0000/example \
   --output workspace/demo/manuscript/references.bib
 ```
 
+通用中文文献初检、来源目录与 Zotero 引用导出：
+
+```bash
+uv run sciops literature chinese-sources
+uv run sciops literature search-cn "中文研究主题" \
+  --from-year 2020 --to-year 2026 \
+  --output workspace/demo/literature/openalex-zh.csv
+uv run sciops zotero export-csl --collection COLLECTION_KEY \
+  --output workspace/demo/manuscript/references.json
+```
+
+每个新项目都会生成 `literature/chinese-search-strategy.md`，应先把研究问题拆成概念块、补齐
+同义词，再分别记录各中文数据库的实际检索式。
+
+## 本地 MCP
+
+仓库的 `.codex/config.toml` 注册了 `sci_workflow_os` 本地 STDIO MCP。项目被设为 trusted 后，
+重启本地 Codex/ChatGPT desktop/IDE extension，再用 `/mcp` 或 `codex mcp list` 核验。
+ChatGPT 网页版不读取本机配置。详见[中文文献 MCP 接入](mcp.qmd)。
+
 ## 完成度审计
 
 ```bash

@@ -1,0 +1,70 @@
+---
+title: "中文文献 MCP 接入"
+---
+
+SCI Workflow OS 使用 [MCP 官方 Python SDK](https://github.com/modelcontextprotocol/python-sdk)
+提供本地 STDIO 服务，使 Codex 和其他兼容客户端能调用同一套中文文献来源目录、OpenAlex
+中文检索和 Zotero 只读元数据能力。
+
+## 提供的工具
+
+| MCP 工具 | 作用 | 是否联网 | 是否写入 |
+| --- | --- | --- | --- |
+| `list_chinese_sources` | 返回中文数据库链接、覆盖、权限与导入路径 | 否 | 否 |
+| `search_chinese_literature` | OpenAlex 中文语言过滤和年份检索 | 是 | 否 |
+| `zotero_collections` | 列出已配置 Zotero collections | 是 | 否 |
+| `zotero_collection_records` | 读取并标准化 Zotero 顶层题录 | 是 | 否 |
+
+服务还提供 `sciops://chinese-literature/sources` 资源和通用中文检索计划 prompt。全部工具都标记为
+只读、幂等；MCP 不直接抓取知网、万方或维普。
+
+## Codex 项目级配置
+
+仓库已包含 `.codex/config.toml`：
+
+```toml
+[mcp_servers.sci_workflow_os]
+command = "uv"
+args = ["run", "--frozen", "sciops-mcp"]
+cwd = "."
+env_vars = ["OPENALEX_API_KEY", "OPENALEX_EMAIL", "ZOTERO_LIBRARY_ID", "ZOTERO_LIBRARY_TYPE", "ZOTERO_API_KEY"]
+startup_timeout_sec = 20
+tool_timeout_sec = 90
+default_tools_approval_mode = "writes"
+```
+
+按照 [Codex 官方 MCP 配置规则](https://developers.openai.com/codex/mcp)，项目级 MCP 只在项目被设为 trusted 后加载。本地 ChatGPT 桌面端、
+Codex CLI 与 IDE extension 在同一主机上共享 Codex MCP 配置；配置后重启对应本地客户端，并用
+`/mcp` 或 `codex mcp list` 检查工具。ChatGPT 网页版不会读取本机 `.codex/config.toml`。
+
+若客户端的最小 `PATH` 找不到 `uv`，将 `command` 改为 `which uv`（Windows 用 `where uv`）
+返回的绝对路径。克隆到其他目录后，不要把某台机器的绝对路径提交到公共仓库。
+
+## 独立启动与诊断
+
+先确认依赖和服务器可导入：
+
+```bash
+./scripts/bootstrap.sh
+uv run python -c "from sciops.mcp_server import mcp; print(mcp.name)"
+```
+
+直接启动：
+
+```bash
+uv run --frozen sciops-mcp
+```
+
+命令保持安静并等待输入是正常现象，因为 STDIO 服务在等客户端协议消息；按 `Ctrl-C` 停止。
+不要在服务器启动前向 stdout 打印日志，否则会破坏 MCP 协议流。
+
+## 凭据
+
+服务从项目根目录未提交的 `.env` 或本机环境变量读取 OpenAlex/Zotero 凭据；配置文件只列变量名，
+不包含真实值。公开分享仓库时 `.env` 继续由 Git 和安全打包器排除。
+
+## 可分享与远程部署边界
+
+仓库代码和项目配置可直接克隆，但 STDIO MCP 运行在用户本机。若要把它做成公开远程服务，需改用
+Streamable HTTP，并增加认证、限流、日志脱敏、密钥托管和部署运维；这不是 GitHub Pages 能承载的
+静态功能。当前版本刻意保留为本地只读服务，以避免把个人 Zotero 和数据库权限暴露到公网。

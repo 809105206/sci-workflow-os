@@ -193,6 +193,8 @@ AND (validation OR benchmark OR comparison OR uncertainty)
 
 先宽检索理解领域，再窄检索确认最近邻工作。数据库至少覆盖本领域主流来源；工程与交叉研究通常可组合 Web of Science、Scopus、IEEE Xplore、ScienceDirect、OnePetro、Google Scholar 等。正式记录应以可追溯数据库结果为主，搜索引擎用于补漏。
 
+中文文献应独立设计而不是把英文词机械翻译后只检一个库。综合研究通常以知网、万方、维普中的至少两个为主检，再按学科增加 NSTL/PubScholar、国家哲学社会科学文献中心、SinoMed 或 ChinaXiv。开放自动检索可用 OpenAlex 的 `language=zh` 初检，但不能替代中文专有库。每个数据库分别记录中文同义词、旧称、缩写/全称、字段语法和命中数；通过授权网页和 Zotero/引用导出统一导入，不绕过登录、验证码或全文权限。可复制命令、来源目录和模板见[通用中文文献检索、导入与引用](docs/chinese-literature.qmd)。
+
 ### 4.2 五层文献结构
 
 1. **奠基文献**：定义问题、核心理论、经典方法。

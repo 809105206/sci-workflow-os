@@ -74,6 +74,11 @@ def initialize_project(destination: Path, *, title: str, force: bool = False) ->
 
 
 def _should_skip(relative: Path, output: Path, source: Path) -> str | None:
+    if len(relative.parts) > 1 and relative.parts[:2] in {
+        (".dvc", "cache"),
+        (".dvc", "tmp"),
+    }:
+        return "DVC runtime data"
     if any(part in EXCLUDED_DIR_NAMES for part in relative.parts[:-1]):
         return "excluded directory"
     env_variant = relative.name.startswith(".env.") and relative.name != ".env.example"

@@ -10,6 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from sciops.audit import audit_project
+from sciops.chinese_sources import list_chinese_literature_sources
 from sciops.data import DataValidationError, validate_csv
 from sciops.doctor import run_checks
 from sciops.literature import (
@@ -17,8 +18,10 @@ from sciops.literature import (
     deduplicate_csv,
     list_zotero_collections,
     merge_csv,
+    pull_zotero_csl_json,
     pull_zotero_csv,
     pull_zotero_json,
+    search_chinese_openalex,
     search_crossref,
     search_openalex,
     write_records,
@@ -149,6 +152,58 @@ def literature_search(
     console.print("引用前必须阅读原文并人工核验题录、结论、版本与许可。")
 
 
+@literature_app.command("search-cn")
+def literature_search_cn(
+    query: Annotated[str, typer.Argument(help="中文主题或中文检索式")],
+    limit: Annotated[int, typer.Option("--limit", "-n", min=1, max=10_000)] = 50,
+    from_year: Annotated[int | None, typer.Option("--from-year", min=1000, max=2100)] = None,
+    to_year: Annotated[int | None, typer.Option("--to-year", min=1000, max=2100)] = None,
+    output: Annotated[Path, typer.Option("--output", "-o")] = Path(
+        "literature/openalex-zh.csv"
+    ),
+) -> None:
+    """通过 OpenAlex 的中文语言过滤检索题录并导出标准 CSV。"""
+    try:
+        records = search_chinese_openalex(
+            query,
+            limit=limit,
+            from_year=from_year,
+            to_year=to_year,
+        )
+        path = write_records(records, output)
+    except Exception as exc:
+        console.print(f"[red]OpenAlex 中文检索失败：{exc}[/red]")
+        console.print("请设置 OPENALEX_API_KEY，并检查网络、年份和检索式。")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]已保存 {len(records)} 条中文记录[/green] {path}")
+    console.print("语言标注可能不完整；仍需在中文专业库补检，并回到原文核验。")
+
+
+@literature_app.command("chinese-sources")
+def literature_chinese_sources(
+    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON")] = False,
+) -> None:
+    """列出跨学科中文期刊检索入口、访问方式和导入路径。"""
+    sources = list_chinese_literature_sources()
+    if json_output:
+        console.print_json(json.dumps(sources, ensure_ascii=False))
+        return
+    table = Table(title="中文文献检索来源")
+    table.add_column("来源")
+    table.add_column("定位")
+    table.add_column("检索入口")
+    table.add_column("项目接入")
+    for source in sources:
+        table.add_row(
+            source["name"],
+            source["role"],
+            source["search_url"],
+            source["machine_access"],
+        )
+    console.print(table)
+    console.print("专有数据库只使用本人/机构授权检索与导出；本项目不绕过访问控制。")
+
+
 @literature_app.command("crossref-search")
 def literature_crossref_search(
     query: Annotated[str, typer.Argument(help="Crossref 检索式")],
@@ -230,7 +285,7 @@ def zotero_pull(
 def zotero_collections(
     json_output: Annotated[bool, typer.Option("--json", help="输出 JSON")] = False,
 ) -> None:
-    """列出 Zotero collections 及其 key，便于按中文检索专题拉取。"""
+    """列出 Zotero collections 及其 key，便于按项目专题拉取。"""
     try:
         collections = list_zotero_collections()
     except Exception as exc:
@@ -258,13 +313,33 @@ def zotero_export_csv(
     output: Annotated[Path, typer.Option("--output", "-o")] = Path("literature/zotero.csv"),
     collection: Annotated[str | None, typer.Option(help="可选 Zotero collection key")] = None,
 ) -> None:
-    """将 Zotero（含知网/万方/维普采集项）标准化为可去重 CSV。"""
+    """将 Zotero（含各中文数据库采集项）标准化为可去重 CSV。"""
     try:
         path, count = pull_zotero_csv(output, collection=collection)
     except Exception as exc:
         console.print(f"[red]Zotero CSV 导出失败：{exc}[/red]")
         raise typer.Exit(2) from exc
     console.print(f"[green]已保存 {count} 条标准化记录[/green] {path}")
+
+
+@zotero_app.command("export-csl")
+def zotero_export_csl(
+    output: Annotated[Path, typer.Option("--output", "-o")] = Path(
+        "manuscript/references.json"
+    ),
+    collection: Annotated[str | None, typer.Option(help="可选 Zotero collection key")] = None,
+) -> None:
+    """导出 Zotero 顶层题录为 Quarto/Pandoc 可直接引用的 CSL JSON。"""
+    try:
+        path, count = pull_zotero_csl_json(output, collection=collection)
+    except Exception as exc:
+        console.print(f"[red]Zotero CSL JSON 导出失败：{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]已保存 {count} 条 CSL JSON 引用[/green] {path}")
+    console.print(
+        "在 Quarto YAML 中设置 bibliography: references.json，再用 [@条目ID] 插入引用。",
+        markup=False,
+    )
 
 
 if __name__ == "__main__":

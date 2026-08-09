@@ -1,7 +1,18 @@
 import csv
+import json
 from pathlib import Path
 
-from sciops.literature import _record_from_zotero_item, _zotero_year, deduplicate_csv, merge_csv
+import pytest
+
+from sciops.chinese_sources import list_chinese_literature_sources
+from sciops.literature import (
+    _build_openalex_filters,
+    _record_from_zotero_item,
+    _zotero_year,
+    deduplicate_csv,
+    merge_csv,
+    pull_zotero_csl_json,
+)
 
 
 def test_dedupe_prefers_doi_and_title(tmp_path: Path) -> None:
@@ -83,3 +94,39 @@ def test_merge_csv_deduplicates_across_databases(tmp_path: Path) -> None:
     shared = next(row for row in rows if row["doi"].lower().endswith("shared"))
     assert set(shared["database"].split("; ")) == {"OpenAlex", "Zotero"}
     assert shared["abstract"] == "更完整摘要"
+
+
+def test_openalex_chinese_filters_include_language_and_complete_years() -> None:
+    filters = _build_openalex_filters(language="ZH", from_year=2020, to_year=2026)
+
+    assert filters == {
+        "language": "zh",
+        "from_publication_date": "2020-01-01",
+        "to_publication_date": "2026-12-31",
+    }
+
+
+def test_openalex_year_range_rejects_reverse_order() -> None:
+    with pytest.raises(ValueError, match="不能晚于"):
+        _build_openalex_filters(from_year=2026, to_year=2020)
+
+
+def test_chinese_source_registry_has_general_and_domain_sources() -> None:
+    sources = {source["key"]: source for source in list_chinese_literature_sources()}
+
+    assert {"openalex", "cnki", "wanfang", "cqvip", "ncpssd", "sinomed"} <= sources.keys()
+    assert all(source["search_url"].startswith("https://") for source in sources.values())
+    assert "不模拟登录" in sources["cnki"]["machine_access"]
+
+
+def test_zotero_csl_json_export_preserves_chinese_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    items = [{"id": "ZH001", "type": "article-journal", "title": "中文期刊论文"}]
+    monkeypatch.setattr("sciops.literature._fetch_zotero_csl_json", lambda collection=None: items)
+
+    output, count = pull_zotero_csl_json(tmp_path / "references.json", collection="COLL")
+
+    assert count == 1
+    assert json.loads(output.read_text(encoding="utf-8")) == items

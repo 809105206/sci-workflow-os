@@ -1,96 +1,136 @@
 ---
-title: "中文文献检索与接入"
+title: "通用中文文献检索、导入与引用"
 ---
 
-## 推荐架构
+本模块是**项目级通用能力**，不绑定某一篇论文、某个主题或某种方法。每次创建新研究项目时，
+`literature/chinese-search-strategy.md` 都会随模板生成，可用于中文期刊、英文期刊、学位论文和综述。
 
-中文数据库不应由未经授权的爬虫直接抓取。推荐把 Zotero 作为合规接入层：
+## 能力边界
 
-1. 在知网、万方、维普或期刊官网使用本人/所在机构的正常访问权限检索。
-2. 用 [Zotero Connector](https://www.zotero.org/support/connector) 保存题录；若网页翻译器失效，则使用数据库提供的 EndNote、RefWorks、NoteExpress、RIS 或 BibTeX 导出，再导入 Zotero。
-3. 在 Zotero 中建立项目专用 collection，例如 `DML-ROP-CN`，并同步到 Zotero Web Library。
-4. 用 `sciops` 读取 collection、标准化为 UTF-8 CSV，再与 OpenAlex/Crossref 结果合并去重。
+中文文献没有一个数据库能完整覆盖全部学科；目前也未发现面向个人、等价于 OpenAlex 的知网
+公开检索 API。因此项目采用双通道：
 
-这条路线只传递用户有权访问的题录和附件，不共享账号，不绕过验证码，不批量抓取受限全文。
+1. **开放自动通道**：OpenAlex 中文语言过滤，适合批量初检、引文/开放获取字段和跨库补检。
+2. **授权人工通道**：知网、万方、维普等在本人或机构权限内检索，再通过 Zotero Connector
+   或数据库引用导出进入统一文献库。
 
-## 数据源组合
+工具不模拟登录，不绕过验证码，不抓取受限全文。候选题录不能直接当作已核验证据；进入正文前
+必须阅读原文，并核对版本、卷期页码、DOI、撤稿/勘误和许可。
 
-| 优先级 | 数据源 | 主要价值 | 接入方式 |
-| --- | --- | --- | --- |
-| A | [中国知网（CNKI）](https://www.cnki.net/) | 中文期刊、学位论文、会议文献 | Zotero Connector；引用导出后导入 Zotero |
-| A | [万方数据](https://www.wanfangdata.com.cn/) | 交叉查漏、学位论文、会议、标准 | Zotero/页面导出；以当前页面提供格式为准 |
-| A | [维普](https://www.cqvip.com/) | 中文科技期刊补检与题录核验 | Zotero/页面导出；以当前页面提供格式为准 |
-| A | [NSTL](https://www.nstl.gov.cn/) | 中外科技文献发现、全文传递 | 个人检索；机构可申请元数据接口 |
-| B | 期刊官网 | 最终版本、卷期页码、勘误核验 | DOI/官网题录，人工核验 |
-| C | 百度学术等聚合搜索 | 发现线索 | 只作线索，不作为最终元数据源 |
+## 维护的数据源目录
 
-经公开页面核对，知网页面可提供 RefWorks、EndNote、NoteExpress 等引用导出。NSTL 面向机构提供数据服务申请，可在获得授权后再开发正式接口。未发现适合个人直接使用、等价于 OpenAlex 免费 key 的知网公开检索 API，因此本项目不内置登录态网页爬虫。
+运行：
 
-## 当前钻井项目的中文检索式
-
-在每个数据库分别执行并记录命中数，不要只复制一条超长检索式：
-
-```text
-S-CN01: 主题=(机械钻速 OR 钻速 OR 钻进速度 OR ROP)
-        AND 主题=(机器学习 OR 深度学习 OR 集成学习 OR 智能预测)
-
-S-CN02: 主题=(钻井参数 OR 钻压 OR 转速 OR 排量)
-        AND 主题=(参数优化 OR 钻井优化 OR 机械钻速)
-
-S-CN03: 主题=(机械钻速 OR 钻井优化)
-        AND 主题=(因果推断 OR 因果效应 OR 反事实 OR 处理效应)
-
-S-CN04: 主题=(双重机器学习 OR 去偏机器学习 OR Double Machine Learning OR DML)
-        AND 主题=(高维 OR 连续处理 OR 异质性效应 OR 因果推断)
-
-S-CN05: 主题=(机械钻速 OR 钻井参数)
-        AND 主题=(可解释机器学习 OR SHAP OR 特征重要性)
+```bash
+uv run sciops literature chinese-sources
+uv run sciops literature chinese-sources --json
 ```
 
-中文检索应覆盖同义词，但 DML 缩写容易与其他术语重名，必须与“因果/处理效应/去偏”组合使用。
+| 数据源 | 适用范围 | 接入方式 |
+| --- | --- | --- |
+| [OpenAlex](https://openalex.org/works) | 跨学科中文题录的自动初检与补检 | `search-cn` / MCP；需要免费 API key |
+| [中国知网](https://www.cnki.net/) | 综合中文期刊、学位、会议等主检 | 授权网页检索 → Zotero/引用导出 |
+| [万方数据](https://www.wanfangdata.com.cn/) | 综合查漏、学位、会议、标准 | 授权网页检索 → Zotero/引用导出 |
+| [维普](https://www.cqvip.com/) | 中文科技期刊补检 | 授权网页检索 → Zotero/引用导出 |
+| [PubScholar](https://pubscholar.cn/) | 公益学术发现、开放全文线索 | 网页检索 → Zotero；DOI 元数据补齐 |
+| [NSTL](https://www.nstl.gov.cn/) | 自然科学与工程科技、全文传递 | 网页检索；机构接口另行申请 |
+| [国家哲学社会科学文献中心](https://www.ncpssd.cn/) | 人文社科中文/外文期刊与集刊 | 高级检索 → Zotero/引用导出 |
+| [ChinaXiv](https://chinaxiv.org/) | 跨学科预印本与最新研究 | 开放检索；标记预印本及版本 |
+| [SinoMed](https://www.sinomed.ac.cn/zh/index.jsp) | 医学、药学、公卫、护理 | 专业检索；保留主题词与自由词策略 |
 
-## Zotero collection 工作流
+CLI 与 MCP 共用代码中的来源注册表；本页提供便于阅读的摘要，并由定期链接检查监控。链接失效时
+应提 Issue，不要在研究项目里复制一批无人维护的旧地址。
 
-先在 Zotero 中创建 `DML-ROP-CN`，给条目增加标签：
+## 可复用检索设计
+
+先把研究问题拆为概念块，而不是直接复制一条与旧项目绑定的检索式：
+
+| 概念块 | 典型内容 | 组合规则 |
+| --- | --- | --- |
+| A 研究对象/人群 | 材料、疾病、人群、设备、地区 | 块内同义词用 `OR` |
+| B 现象/结局/任务 | 性能、风险、机制、预测、政策效果 | 块内同义词用 `OR` |
+| C 方法/干预/机制 | 算法、实验、治疗、政策、理论 | 块内同义词用 `OR` |
+| D 场景/约束 | 工况、时间、行业、亚组 | 仅在需要提高精度时加入 |
+| E 排除概念 | 明确同名异义词 | `NOT` 谨慎使用并记录误伤检查 |
+
+通式为：
 
 ```text
-source:cnki / source:wanfang / source:cqvip / source:nstl
-language:zh
-screening:pending
-topic:dml / topic:rop / topic:drilling-optimization
+(A1 OR A2 OR A3) AND (B1 OR B2) AND (C1 OR C2)
 ```
 
-列出 collection key：
+至少保存高召回版本（A+B）和高精度版本（A+B+C/D）。不同数据库的字段语法不同，完整检索式、
+字段、时间范围、日期、命中数、导出数和纳入数应分别写入 `02_search_log.csv`。
+
+## 自动中文初检
+
+```bash
+uv run sciops literature search-cn "你的中文主题词" \
+  --from-year 2020 \
+  --to-year 2026 \
+  --limit 200 \
+  --output workspace/my-paper/literature/openalex-zh.csv
+```
+
+该命令调用 OpenAlex 并固定 `language=zh`，输出与 Crossref/Zotero 相同的标准字段。OpenAlex 的
+中文覆盖和语言识别并不完整，所以输出为空或数量偏少不表示“没有中文研究”。
+
+## 授权数据库 → Zotero → 统一题录
+
+推荐流程：
+
+1. 安装 [Zotero Connector](https://www.zotero.org/support/connector)。
+2. 在授权数据库正常检索，并为当前项目建立 `CN-项目简称` collection。
+3. Connector 能识别时直接保存；不能识别时，使用数据库提供的 EndNote、RefWorks、
+   NoteExpress、RIS 或 BibTeX 导出，再导入 Zotero。
+4. 使用来源、语言和筛选状态标签；不要用标签代替检索日志。
+5. 导出标准 CSV，与自动检索结果合并。
 
 ```bash
 uv run sciops zotero collections
-```
-
-将指定 collection 标准化为 CSV：
-
-```bash
-uv run sciops zotero export-csv \
-  --collection YOUR_COLLECTION_KEY \
-  --output workspace/dml-rop-causal-study/literature/zotero-cn.csv
-```
-
-和英文结果合并，并优先按 DOI、其次按 Unicode 规范化标题去重：
-
-```bash
+uv run sciops zotero export-csv --collection COLLECTION_KEY \
+  --output workspace/my-paper/literature/zotero-cn.csv
 uv run sciops literature merge \
-  workspace/dml-rop-causal-study/literature/zotero-cn.csv \
-  workspace/dml-rop-causal-study/literature/dml-methods.csv \
-  workspace/dml-rop-causal-study/literature/rop-machine-learning.csv \
-  --output workspace/dml-rop-causal-study/literature/combined-deduplicated.csv
+  workspace/my-paper/literature/openalex-zh.csv \
+  workspace/my-paper/literature/zotero-cn.csv \
+  --output workspace/my-paper/literature/combined.csv
 ```
 
-## 检索审计要求
+合并器优先按 DOI、其次按 Unicode 规范化标题去重，并合并数据库来源字段。中文/英文版本、
+预印本/期刊版、学位论文/拆分论文仍需人工建立版本关系，不能自动视为普通重复项。
 
-每个数据库分别在 `02_search_log.csv` 记录：数据库、完整检索式、字段、时间范围、检索日期、命中数、导出数和人工纳入数。中文与英文同题论文不能仅凭标题判断重复，应依次核对 DOI、作者、年份、期刊、摘要和数据来源。
+## 插入中文引用
 
-## 全文与版权
+Quarto/Pandoc 项目可直接从 Zotero collection 导出 CSL JSON：
 
-- 工具只自动处理题录和用户合法获得的本地附件。
-- 不把知网/万方/维普下载的受限 PDF 打进公开 Release。
-- 全文引用前核对原文、页码、版本、撤稿/勘误和许可。
-- 无法公开全文时，可公开 DOI、题录、检索式、筛选决定和证据矩阵。
+```bash
+uv run sciops zotero export-csl --collection COLLECTION_KEY \
+  --output workspace/my-paper/manuscript/references.json
+```
+
+在稿件 YAML 中声明：
+
+```yaml
+bibliography: references.json
+```
+
+正文使用 `[@条目ID]`；条目 ID 可在 `references.json` 的 `id` 字段查看。Word/LibreOffice 稿件
+使用 Zotero 官方文字处理器插件插入和切换 GB/T 7714 或目标期刊样式，不长期维护手工编号。
+
+## 学科选库最低建议
+
+- 综合/工程：知网 + 万方/维普 + OpenAlex；再用 NSTL 或 PubScholar 查漏。
+- 人文社科：知网 + 国家哲学社会科学文献中心；必要时补万方/维普。
+- 医学健康：知网 + 万方 + SinoMed；系统评价还应按方案检索国际医学库。
+- 最新进展：在上述正式期刊库之外增加 ChinaXiv，但清楚标记“未经正式同行评审”。
+
+“最低建议”不是固定数量门槛。是否足够取决于研究问题、学科、综述类型和目标期刊，最终应通过
+已知关键文献回收率、引用追踪和更新检索验证。
+
+## 审计与版权检查
+
+- 每个库单独记录检索式和结果，不能只写“在知网检索相关文献”。
+- 题名/摘要初筛与全文复筛使用预先定义的排除原因。
+- 投稿前执行更新检索，并记录新增文献是否改变论点或新颖性判断。
+- 受限 PDF 不进入公开 Git、Pages 或 Release；能公开的是题录、检索式、筛选决定和证据矩阵。
+- 引用前核对原文；聚合搜索和 AI 生成的题录都不能作为最终元数据事实源。

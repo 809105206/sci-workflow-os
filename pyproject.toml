@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sci-workflow-os"
-version = "0.1.3"
+version = "0.2.0"
 description = "An auditable G0-G10 workflow toolkit for collaborative SCI research and publishing"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,6 +21,7 @@ classifiers = [
 ]
 dependencies = [
   "httpx[socks]>=0.28,<1",
+  "mcp>=2,<3",
   "pyalex>=0.21,<1",
   "python-dotenv>=1.1,<2",
   "pyyaml>=6,<7",
@@ -49,6 +50,7 @@ dev = [
 
 [project.scripts]
 sciops = "sciops.cli:app"
+sciops-mcp = "sciops.mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sciops"]

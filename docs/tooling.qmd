@@ -11,13 +11,14 @@ title: "工具栈与上游项目"
 | Quarto Actions | [quarto-dev/quarto-actions](https://github.com/quarto-dev/quarto-actions) | CI 渲染 | Actions 引用固定主版本 |
 | PyAlex | [J535D165/pyalex](https://github.com/J535D165/pyalex) | OpenAlex 文献检索 | Python 依赖 |
 | Pyzotero | [urschrei/pyzotero](https://github.com/urschrei/pyzotero) | Zotero API；中文数据库题录接入与标准化 | Python 依赖 |
+| MCP Python SDK | [modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk) | 为 Codex/兼容客户端暴露只读中文检索与 Zotero 工具 | Python 依赖，锁定 2.x 主版本 |
 | Crossref REST API | [Crossref REST API](https://api.crossref.org/) | 无 key 的题录检索与 DOI/BibTeX | HTTP 接口 |
 | DVC | [treeverse/dvc](https://github.com/treeverse/dvc) | 数据、模型和实验版本 | `data` 可选依赖 |
 | Pandera | [unionai-oss/pandera](https://github.com/unionai-oss/pandera) | 表格数据验证 | `data` 可选依赖 |
 | uv | [astral-sh/uv](https://github.com/astral-sh/uv) | Python 环境和锁文件 | 安装/CI |
 | Lychee | [lycheeverse/lychee](https://github.com/lycheeverse/lychee) | 定期检查公开链接 | GitHub Action |
 
-候选项目均在 2026-08-09 核验为未归档且近期仍有提交。实际版本由 `uv.lock` 和 Actions 引用固定；升级由 Dependabot/人工 PR 审查。
+候选项目均在 2026-08-09 核验为未归档且近期仍有提交。MCP SDK v2.0.0 已于 2026-07-28 成为当前稳定线，本项目已按 v2 API 实现并限制 `<3`。实际版本由 `uv.lock` 和 Actions 引用固定；升级由 Dependabot/人工 PR 审查。
 
 ## 有条件启用
 
@@ -30,3 +31,4 @@ title: "工具栈与上游项目"
 - MLflow：功能成熟但对本项目默认规模过重，DVC 实验登记已覆盖基础可追溯性。
 - 自动选刊推荐器：分区、索引和政策动态变化，且第三方结果容易误导；保留人工官方核验门。
 - 论文全文自动下载器：可能触及版权、机构认证和服务条款；本项目只处理授权元数据与用户合法获得的材料。
+- 第三方知网/万方抓取 MCP：搜索结果中没有同时满足官方接口、个人合规授权、稳定维护和可审计要求的方案；核心能力采用自有只读 MCP + Zotero 授权导入。

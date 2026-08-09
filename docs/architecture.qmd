@@ -7,7 +7,7 @@ title: "系统架构"
 | 层 | 责任 | 组件 |
 | --- | --- | --- |
 | 规范层 | 定义 G0–G10 的质量标准和停止条件 | `SCI.md` |
-| 执行层 | 初始化、检索、审计、去重、打包 | `sciops` |
+| 执行层 | 初始化、检索、审计、去重、引用导出、打包 | `sciops` CLI + 本地只读 MCP |
 | 证据层 | 文献、数据、实验、稿件与决策记录 | 12 项工作包、DVC、Pandera、Quarto |
 | 协作发布层 | 审查、构建、网站、下载与版本归档 | GitHub Issues/PR/Actions/Pages/Releases |
 
@@ -22,7 +22,7 @@ title: "系统架构"
 
 - 阶段状态：`stage-gates.yaml`
 - 文献候选：`literature/*.csv`
-- 最终引用：`manuscript/references.bib`
+- 最终引用：`manuscript/references.bib` 或 Zotero 导出的 `manuscript/references.json`
 - 数据定义：`05_data_dictionary.csv`
 - 实验事实：`07_experiment_registry.csv`
 - 论文事实：由脚本生成的最终表图和 Quarto 源稿

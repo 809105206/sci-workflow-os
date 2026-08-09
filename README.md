@@ -10,7 +10,8 @@
 
 - `sciops` 命令行：项目初始化、G0–G10 阶段审计、联网文献检索、去重、DOI/BibTeX 获取和安全打包。
 - 12 项最小可复现工作包与 G0–G10 阶段门模板。
-- OpenAlex/Crossref 联网检索和 Zotero API 接入；可把知网、万方、维普采集题录统一为 CSV 并跨库去重，API 密钥仅从本地环境变量读取。
+- 项目级通用中文文献模块：OpenAlex 中文过滤自动检索，知网/万方/维普/PubScholar/NSTL/国家哲社中心/ChinaXiv/SinoMed 正式入口，Zotero 统一导入、去重与 CSL JSON 引用。
+- 本地只读 MCP：Codex/兼容客户端可调用中文来源目录、OpenAlex 中文检索和 Zotero collections/题录；API 密钥仅从本地环境变量读取。
 - DVC/Pandera 可选数据栈：数据版本、实验管线与表格数据验证。
 - Quarto/Pandoc 写作栈：默认生成网页与 Word；安装 TinyTeX 后可启用 PDF。
 - GitHub Issues、Pull Requests、Actions、Pages 与 Releases：多人协作、在线站点和版本下载。
@@ -64,9 +65,18 @@ PowerShell 可用 `Copy-Item .env.example .env`。已在终端设置的环境变
 
 真实凭据只保存在本机 `.env` 或 CI 的加密 Secrets 中，不要放入 issue、聊天、README、命令历史或 Git 提交。
 
-### 中文文献：知网/万方/维普 → Zotero → 项目
+### 中文文献：开放检索 + 授权数据库 + Zotero
 
-本项目不绕过数据库登录、验证码或访问控制。推荐先用 Zotero Connector 或数据库的引用导出功能，将有权访问的中文题录保存到项目专用 Zotero collection，再执行：
+此能力适用于以后任何中文或英文期刊项目，不与某篇论文绑定。先列出跨学科与专业来源，并用 OpenAlex 中文过滤做自动初检：
+
+```bash
+uv run sciops literature chinese-sources
+uv run sciops literature search-cn "你的中文主题词" \
+  --from-year 2020 --to-year 2026 --limit 200 \
+  --output workspace/my-paper/literature/openalex-zh.csv
+```
+
+本项目不绕过数据库登录、验证码或访问控制。再用 Zotero Connector 或数据库引用导出功能，将本人/机构有权访问的中文题录保存到项目专用 Zotero collection：
 
 ```bash
 uv run sciops zotero collections
@@ -74,11 +84,24 @@ uv run sciops zotero export-csv --collection COLLECTION_KEY \
   --output workspace/my-paper/literature/zotero-cn.csv
 uv run sciops literature merge \
   workspace/my-paper/literature/zotero-cn.csv \
-  workspace/my-paper/literature/openalex.csv \
+  workspace/my-paper/literature/openalex-zh.csv \
   --output workspace/my-paper/literature/combined.csv
+uv run sciops zotero export-csl --collection COLLECTION_KEY \
+  --output workspace/my-paper/manuscript/references.json
 ```
 
-完整数据库组合、中文检索式、标签和审计规则见[中文文献检索与接入](https://809105206.github.io/sci-workflow-os/docs/chinese-literature.html)。
+完整选库、通用概念块检索、标签、去重、插入引用和审计规则见[通用中文文献检索、导入与引用](https://809105206.github.io/sci-workflow-os/docs/chinese-literature.html)。
+
+### 本地 MCP（Codex/兼容客户端）
+
+仓库自带 `.codex/config.toml` 和 `sciops-mcp`。将项目设为 trusted、完成安装并重启对应本地客户端后，用 `/mcp` 或 `codex mcp list` 检查。ChatGPT 网页版不会读取本机项目配置。
+
+```bash
+./scripts/bootstrap.sh
+uv run --frozen sciops-mcp
+```
+
+直接启动后保持安静并等待输入是正常现象。配置、四个只读工具、凭据边界和远程部署说明见[中文文献 MCP 接入](https://809105206.github.io/sci-workflow-os/docs/mcp.html)。
 
 ### 5. 审计阶段完成度
 
@@ -118,6 +141,7 @@ uv run sciops package workspace/my-paper --output dist/my-paper.zip
 | `SCI.md` | G0–G10 总规范与质量标准 |
 | `src/sciops/` | 可执行命令行工具 |
 | `templates/project/` | 可复制研究工作包 |
+| `.codex/config.toml` | 可分享的项目级本地 MCP 配置 |
 | `manuscript/` | Quarto 论文示例与参考文献 |
 | `docs/` | 架构、审计、工具与协作说明 |
 | `.github/` | Issue、PR、CI、Pages、Release 自动化 |

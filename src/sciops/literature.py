@@ -73,7 +73,37 @@ def _record_from_work(work: dict) -> dict[str, str | int | bool]:
     }
 
 
-def search_openalex(query: str, *, limit: int = 50) -> list[dict[str, str | int | bool]]:
+def _build_openalex_filters(
+    *,
+    language: str | None = None,
+    from_year: int | None = None,
+    to_year: int | None = None,
+) -> dict[str, str]:
+    if from_year is not None and not 1000 <= from_year <= 2100:
+        raise ValueError("from_year 必须在 1000 到 2100 之间")
+    if to_year is not None and not 1000 <= to_year <= 2100:
+        raise ValueError("to_year 必须在 1000 到 2100 之间")
+    if from_year is not None and to_year is not None and from_year > to_year:
+        raise ValueError("from_year 不能晚于 to_year")
+
+    filters: dict[str, str] = {}
+    if language and language.strip():
+        filters["language"] = language.strip().lower()
+    if from_year is not None:
+        filters["from_publication_date"] = f"{from_year:04d}-01-01"
+    if to_year is not None:
+        filters["to_publication_date"] = f"{to_year:04d}-12-31"
+    return filters
+
+
+def search_openalex(
+    query: str,
+    *,
+    limit: int = 50,
+    language: str | None = None,
+    from_year: int | None = None,
+    to_year: int | None = None,
+) -> list[dict[str, str | int | bool]]:
     if not query.strip():
         raise ValueError("检索式不能为空")
     if limit < 1 or limit > 10_000:
@@ -86,14 +116,40 @@ def search_openalex(query: str, *, limit: int = 50) -> list[dict[str, str | int 
         )
     pyalex.config.api_key = api_key
 
+    filters = _build_openalex_filters(
+        language=language,
+        from_year=from_year,
+        to_year=to_year,
+    )
+    works = Works().search(query)
+    if filters:
+        works = works.filter(**filters)
+
     records: list[dict[str, str | int | bool]] = []
-    pager = Works().search(query).paginate(per_page=min(limit, 200), n_max=limit)
+    pager = works.paginate(per_page=min(limit, 200), n_max=limit)
     for page in pager:
         for work in page:
             records.append(_record_from_work(work))
             if len(records) >= limit:
                 return records
     return records
+
+
+def search_chinese_openalex(
+    query: str,
+    *,
+    limit: int = 50,
+    from_year: int | None = None,
+    to_year: int | None = None,
+) -> list[dict[str, str | int | bool]]:
+    """Search works OpenAlex classifies as Chinese-language records."""
+    return search_openalex(
+        query,
+        limit=limit,
+        language="zh",
+        from_year=from_year,
+        to_year=to_year,
+    )
 
 
 def _crossref_year(item: dict) -> int | str:
@@ -307,7 +363,16 @@ def _zotero_client() -> zotero.Zotero:
 
 def _fetch_zotero_items(*, collection: str | None = None) -> list[dict]:
     client = _zotero_client()
-    first_page = client.collection_items(collection) if collection else client.items()
+    first_page = client.collection_items_top(collection) if collection else client.top()
+    return client.everything(first_page)
+
+
+def _fetch_zotero_csl_json(*, collection: str | None = None) -> list[dict]:
+    client = _zotero_client()
+    if collection:
+        first_page = client.collection_items_top(collection, content="csljson")
+    else:
+        first_page = client.top(content="csljson")
     return client.everything(first_page)
 
 
@@ -389,8 +454,29 @@ def pull_zotero_csv(output: Path, *, collection: str | None = None) -> tuple[Pat
     return write_records(records, output), len(records)
 
 
+def get_zotero_records(
+    *,
+    collection: str | None = None,
+    limit: int = 100,
+) -> list[dict[str, str | int | bool]]:
+    """Return normalized top-level Zotero records without writing a file."""
+    if limit < 1 or limit > 1_000:
+        raise ValueError("Zotero limit 必须在 1 到 1000 之间")
+    items = _fetch_zotero_items(collection=collection)
+    return [_record_from_zotero_item(item) for item in items[:limit]]
+
+
 def pull_zotero_json(output: Path, *, collection: str | None = None) -> tuple[Path, int]:
     items = _fetch_zotero_items(collection=collection)
+    output = output.expanduser().resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+    return output, len(items)
+
+
+def pull_zotero_csl_json(output: Path, *, collection: str | None = None) -> tuple[Path, int]:
+    """Export top-level Zotero items as CSL JSON for Quarto/Pandoc citations."""
+    items = _fetch_zotero_csl_json(collection=collection)
     output = output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
