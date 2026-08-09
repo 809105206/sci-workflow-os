@@ -10,7 +10,7 @@
 
 - `sciops` 命令行：项目初始化、G0–G10 阶段审计、联网文献检索、去重、DOI/BibTeX 获取和安全打包。
 - 12 项最小可复现工作包与 G0–G10 阶段门模板。
-- OpenAlex 联网检索和 Zotero API 接入；API 密钥仅从本地环境变量读取。
+- OpenAlex/Crossref 联网检索和 Zotero API 接入；可把知网、万方、维普采集题录统一为 CSV 并跨库去重，API 密钥仅从本地环境变量读取。
 - DVC/Pandera 可选数据栈：数据版本、实验管线与表格数据验证。
 - Quarto/Pandoc 写作栈：默认生成网页与 Word；安装 TinyTeX 后可启用 PDF。
 - GitHub Issues、Pull Requests、Actions、Pages 与 Releases：多人协作、在线站点和版本下载。
@@ -63,6 +63,22 @@ PowerShell 可用 `Copy-Item .env.example .env`。已在终端设置的环境变
 - Zotero：登录 [API Keys](https://www.zotero.org/settings/keys)，创建仅供本工具使用的 private key。只拉取文献时授予 library read access 即可；同一页面显示的数字 user ID 填入 `ZOTERO_LIBRARY_ID`，生成的 key 填入 `ZOTERO_API_KEY`。个人库保持 `ZOTERO_LIBRARY_TYPE=user`；群组库改为 `group` 并使用数字 group ID。
 
 真实凭据只保存在本机 `.env` 或 CI 的加密 Secrets 中，不要放入 issue、聊天、README、命令历史或 Git 提交。
+
+### 中文文献：知网/万方/维普 → Zotero → 项目
+
+本项目不绕过数据库登录、验证码或访问控制。推荐先用 Zotero Connector 或数据库的引用导出功能，将有权访问的中文题录保存到项目专用 Zotero collection，再执行：
+
+```bash
+uv run sciops zotero collections
+uv run sciops zotero export-csv --collection COLLECTION_KEY \
+  --output workspace/my-paper/literature/zotero-cn.csv
+uv run sciops literature merge \
+  workspace/my-paper/literature/zotero-cn.csv \
+  workspace/my-paper/literature/openalex.csv \
+  --output workspace/my-paper/literature/combined.csv
+```
+
+完整数据库组合、中文检索式、标签和审计规则见[中文文献检索与接入](https://809105206.github.io/sci-workflow-os/docs/chinese-literature.html)。
 
 ### 5. 审计阶段完成度
 

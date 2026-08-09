@@ -20,9 +20,13 @@ if ! command -v pandoc >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p _site/manuscript
+mkdir -p _site/docs _site/manuscript
 pandoc --from markdown --standalone --metadata title="SCI Workflow OS" index.qmd -o _site/index.html
 pandoc --from markdown --standalone --metadata title="SCI Workflow SOP" SCI.md -o _site/SCI.html
+for source in docs/*.qmd; do
+  output="_site/${source%.qmd}.html"
+  pandoc --from markdown --standalone "$source" -o "$output"
+done
 pandoc --from markdown --standalone manuscript/paper.qmd -o _site/manuscript/paper.html
 pandoc --from markdown manuscript/paper.qmd -o _site/manuscript/paper.docx
 

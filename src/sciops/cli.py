@@ -15,6 +15,9 @@ from sciops.doctor import run_checks
 from sciops.literature import (
     append_bibtex,
     deduplicate_csv,
+    list_zotero_collections,
+    merge_csv,
+    pull_zotero_csv,
     pull_zotero_json,
     search_crossref,
     search_openalex,
@@ -179,6 +182,22 @@ def literature_dedupe(
     console.print(f"[green]{before} → {after}[/green] {path}")
 
 
+@literature_app.command("merge")
+def literature_merge(
+    sources: Annotated[list[Path], typer.Argument(help="两个或更多标准化 CSV")],
+    output: Annotated[Path, typer.Option("--output", "-o", help="合并去重后的 CSV")] = Path(
+        "literature/combined.csv"
+    ),
+) -> None:
+    """合并 OpenAlex、Crossref 与 Zotero 中英文题录并按 DOI/标题去重。"""
+    try:
+        path, before, after = merge_csv(sources, output)
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]{before} → {after}[/green] {path}")
+
+
 @literature_app.command("bibtex")
 def literature_bibtex(
     doi: Annotated[str, typer.Argument(help="DOI")],
@@ -205,6 +224,47 @@ def zotero_pull(
         console.print(f"[red]Zotero 拉取失败：{exc}[/red]")
         raise typer.Exit(2) from exc
     console.print(f"[green]已保存 {count} 条记录[/green] {path}")
+
+
+@zotero_app.command("collections")
+def zotero_collections(
+    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON")] = False,
+) -> None:
+    """列出 Zotero collections 及其 key，便于按中文检索专题拉取。"""
+    try:
+        collections = list_zotero_collections()
+    except Exception as exc:
+        console.print(f"[red]Zotero collections 读取失败：{exc}[/red]")
+        raise typer.Exit(2) from exc
+    if json_output:
+        console.print_json(json.dumps(collections, ensure_ascii=False))
+        return
+    table = Table(title="Zotero collections")
+    table.add_column("名称")
+    table.add_column("Collection key")
+    table.add_column("父级 key")
+    for collection in collections:
+        table.add_row(
+            str(collection["name"]),
+            str(collection["key"]),
+            str(collection["parent"]),
+        )
+    console.print(table)
+    console.print(f"共 {len(collections)} 个 collection")
+
+
+@zotero_app.command("export-csv")
+def zotero_export_csv(
+    output: Annotated[Path, typer.Option("--output", "-o")] = Path("literature/zotero.csv"),
+    collection: Annotated[str | None, typer.Option(help="可选 Zotero collection key")] = None,
+) -> None:
+    """将 Zotero（含知网/万方/维普采集项）标准化为可去重 CSV。"""
+    try:
+        path, count = pull_zotero_csv(output, collection=collection)
+    except Exception as exc:
+        console.print(f"[red]Zotero CSV 导出失败：{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]已保存 {count} 条标准化记录[/green] {path}")
 
 
 if __name__ == "__main__":

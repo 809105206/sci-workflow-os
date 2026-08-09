@@ -1,0 +1,96 @@
+---
+title: "中文文献检索与接入"
+---
+
+## 推荐架构
+
+中文数据库不应由未经授权的爬虫直接抓取。推荐把 Zotero 作为合规接入层：
+
+1. 在知网、万方、维普或期刊官网使用本人/所在机构的正常访问权限检索。
+2. 用 [Zotero Connector](https://www.zotero.org/support/connector) 保存题录；若网页翻译器失效，则使用数据库提供的 EndNote、RefWorks、NoteExpress、RIS 或 BibTeX 导出，再导入 Zotero。
+3. 在 Zotero 中建立项目专用 collection，例如 `DML-ROP-CN`，并同步到 Zotero Web Library。
+4. 用 `sciops` 读取 collection、标准化为 UTF-8 CSV，再与 OpenAlex/Crossref 结果合并去重。
+
+这条路线只传递用户有权访问的题录和附件，不共享账号，不绕过验证码，不批量抓取受限全文。
+
+## 数据源组合
+
+| 优先级 | 数据源 | 主要价值 | 接入方式 |
+| --- | --- | --- | --- |
+| A | [中国知网（CNKI）](https://www.cnki.net/) | 中文期刊、学位论文、会议文献 | Zotero Connector；引用导出后导入 Zotero |
+| A | [万方数据](https://www.wanfangdata.com.cn/) | 交叉查漏、学位论文、会议、标准 | Zotero/页面导出；以当前页面提供格式为准 |
+| A | [维普](https://www.cqvip.com/) | 中文科技期刊补检与题录核验 | Zotero/页面导出；以当前页面提供格式为准 |
+| A | [NSTL](https://www.nstl.gov.cn/) | 中外科技文献发现、全文传递 | 个人检索；机构可申请元数据接口 |
+| B | 期刊官网 | 最终版本、卷期页码、勘误核验 | DOI/官网题录，人工核验 |
+| C | 百度学术等聚合搜索 | 发现线索 | 只作线索，不作为最终元数据源 |
+
+经公开页面核对，知网页面可提供 RefWorks、EndNote、NoteExpress 等引用导出。NSTL 面向机构提供数据服务申请，可在获得授权后再开发正式接口。未发现适合个人直接使用、等价于 OpenAlex 免费 key 的知网公开检索 API，因此本项目不内置登录态网页爬虫。
+
+## 当前钻井项目的中文检索式
+
+在每个数据库分别执行并记录命中数，不要只复制一条超长检索式：
+
+```text
+S-CN01: 主题=(机械钻速 OR 钻速 OR 钻进速度 OR ROP)
+        AND 主题=(机器学习 OR 深度学习 OR 集成学习 OR 智能预测)
+
+S-CN02: 主题=(钻井参数 OR 钻压 OR 转速 OR 排量)
+        AND 主题=(参数优化 OR 钻井优化 OR 机械钻速)
+
+S-CN03: 主题=(机械钻速 OR 钻井优化)
+        AND 主题=(因果推断 OR 因果效应 OR 反事实 OR 处理效应)
+
+S-CN04: 主题=(双重机器学习 OR 去偏机器学习 OR Double Machine Learning OR DML)
+        AND 主题=(高维 OR 连续处理 OR 异质性效应 OR 因果推断)
+
+S-CN05: 主题=(机械钻速 OR 钻井参数)
+        AND 主题=(可解释机器学习 OR SHAP OR 特征重要性)
+```
+
+中文检索应覆盖同义词，但 DML 缩写容易与其他术语重名，必须与“因果/处理效应/去偏”组合使用。
+
+## Zotero collection 工作流
+
+先在 Zotero 中创建 `DML-ROP-CN`，给条目增加标签：
+
+```text
+source:cnki / source:wanfang / source:cqvip / source:nstl
+language:zh
+screening:pending
+topic:dml / topic:rop / topic:drilling-optimization
+```
+
+列出 collection key：
+
+```bash
+uv run sciops zotero collections
+```
+
+将指定 collection 标准化为 CSV：
+
+```bash
+uv run sciops zotero export-csv \
+  --collection YOUR_COLLECTION_KEY \
+  --output workspace/dml-rop-causal-study/literature/zotero-cn.csv
+```
+
+和英文结果合并，并优先按 DOI、其次按 Unicode 规范化标题去重：
+
+```bash
+uv run sciops literature merge \
+  workspace/dml-rop-causal-study/literature/zotero-cn.csv \
+  workspace/dml-rop-causal-study/literature/dml-methods.csv \
+  workspace/dml-rop-causal-study/literature/rop-machine-learning.csv \
+  --output workspace/dml-rop-causal-study/literature/combined-deduplicated.csv
+```
+
+## 检索审计要求
+
+每个数据库分别在 `02_search_log.csv` 记录：数据库、完整检索式、字段、时间范围、检索日期、命中数、导出数和人工纳入数。中文与英文同题论文不能仅凭标题判断重复，应依次核对 DOI、作者、年份、期刊、摘要和数据来源。
+
+## 全文与版权
+
+- 工具只自动处理题录和用户合法获得的本地附件。
+- 不把知网/万方/维普下载的受限 PDF 打进公开 Release。
+- 全文引用前核对原文、页码、版本、撤稿/勘误和许可。
+- 无法公开全文时，可公开 DOI、题录、检索式、筛选决定和证据矩阵。

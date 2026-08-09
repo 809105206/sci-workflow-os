@@ -10,7 +10,7 @@ title: "G0–G10 能力缺口审计"
 | --- | --- | --- | --- |
 | G0 | 项目章程和边界 | 可分派状态、责任人与审查记录 | 项目模板、Issue、阶段门 YAML |
 | G1 | 选题评分法 | 候选题统一记录和协作决策 | 选题表、Topic Proposal 表单 |
-| G2 | 检索策略与文献矩阵 | 联网抓取、去重、文献库同步 | OpenAlex CLI、Crossref BibTeX、Pyzotero |
+| G2 | 检索策略与文献矩阵 | 中英文检索、跨库去重、文献库同步 | OpenAlex CLI、Crossref BibTeX、Pyzotero、中文数据库导出 |
 | G3 | 协议/预分析模板 | 方案版本、偏离原因和批准状态 | Git/PR、阶段门、协议模板 |
 | G4 | 数据字典与质量要求 | 自动数据模式验证、大文件版本 | Pandera、DVC、数据质量模板 |
 | G5 | 实验顺序和记录 | 可执行注册表、提交与数据版本关联 | 实验 CSV、Git commit/DVC 字段 |

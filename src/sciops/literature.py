@@ -16,12 +16,16 @@ from pyzotero import zotero
 
 LITERATURE_FIELDS = (
     "openalex_id",
+    "zotero_key",
     "doi",
     "title",
     "publication_year",
     "work_type",
     "source",
+    "database",
+    "language",
     "authors",
+    "keywords",
     "cited_by_count",
     "is_oa",
     "landing_page",
@@ -47,12 +51,20 @@ def _record_from_work(work: dict) -> dict[str, str | int | bool]:
     landing_page = (work.get("primary_location") or {}).get("landing_page_url") or ""
     return {
         "openalex_id": work.get("id") or "",
+        "zotero_key": "",
         "doi": work.get("doi") or "",
         "title": work.get("title") or work.get("display_name") or "",
         "publication_year": work.get("publication_year") or "",
         "work_type": work.get("type") or "",
         "source": source,
+        "database": "OpenAlex",
+        "language": work.get("language") or "",
         "authors": authors,
+        "keywords": "; ".join(
+            keyword.get("display_name", "")
+            for keyword in work.get("keywords", [])
+            if keyword.get("display_name")
+        ),
         "cited_by_count": work.get("cited_by_count") or 0,
         "is_oa": bool((work.get("open_access") or {}).get("is_oa")),
         "landing_page": landing_page,
@@ -134,12 +146,16 @@ def search_crossref(query: str, *, limit: int = 50) -> list[dict[str, str | int 
         records.append(
             {
                 "openalex_id": "",
+                "zotero_key": "",
                 "doi": doi,
                 "title": title,
                 "publication_year": _crossref_year(item),
                 "work_type": item.get("type") or "",
                 "source": source,
+                "database": "Crossref",
+                "language": item.get("language") or "",
                 "authors": "; ".join(author_names),
+                "keywords": "; ".join(item.get("subject") or []),
                 "cited_by_count": item.get("is-referenced-by-count") or 0,
                 "is_oa": "",
                 "landing_page": item.get("URL") or (f"https://doi.org/{doi}" if doi else ""),
@@ -171,13 +187,7 @@ def _normalize_title(value: str) -> str:
     return "".join(char for char in value if char.isalnum())
 
 
-def deduplicate_csv(source: Path, output: Path) -> tuple[Path, int, int]:
-    source = source.expanduser().resolve()
-    with source.open("r", encoding="utf-8-sig", newline="") as handle:
-        rows = list(csv.DictReader(handle))
-    if not rows:
-        raise ValueError("输入 CSV 没有记录")
-
+def _deduplicate_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     unique: dict[str, dict[str, str]] = {}
     for index, row in enumerate(rows):
         doi = _normalize_doi(row.get("doi", ""))
@@ -186,8 +196,36 @@ def deduplicate_csv(source: Path, output: Path) -> tuple[Path, int, int]:
         current = unique.get(key)
         current_score = sum(bool(value) for value in current.values()) if current else -1
         candidate_score = sum(bool(value) for value in row.values())
-        if candidate_score > current_score:
+        if current is None:
             unique[key] = row
+            continue
+        primary, secondary = (row.copy(), current) if candidate_score > current_score else (
+            current.copy(),
+            row,
+        )
+        for field, value in secondary.items():
+            if value and not primary.get(field):
+                primary[field] = value
+        databases = []
+        for value in (current.get("database", ""), row.get("database", "")):
+            for database in value.split(";"):
+                database = database.strip()
+                if database and database not in databases:
+                    databases.append(database)
+        if databases:
+            primary["database"] = "; ".join(databases)
+        unique[key] = primary
+    return list(unique.values())
+
+
+def deduplicate_csv(source: Path, output: Path) -> tuple[Path, int, int]:
+    source = source.expanduser().resolve()
+    with source.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    if not rows:
+        raise ValueError("输入 CSV 没有记录")
+
+    unique = _deduplicate_rows(rows)
 
     output = output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -195,7 +233,36 @@ def deduplicate_csv(source: Path, output: Path) -> tuple[Path, int, int]:
     with output.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(unique.values())
+        writer.writerows(unique)
+    return output, len(rows), len(unique)
+
+
+def merge_csv(sources: list[Path], output: Path) -> tuple[Path, int, int]:
+    if len(sources) < 2:
+        raise ValueError("至少需要两个输入 CSV")
+
+    rows: list[dict[str, str]] = []
+    fieldnames: list[str] = []
+    for source in sources:
+        source = source.expanduser().resolve()
+        with source.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if not reader.fieldnames:
+                raise ValueError(f"输入 CSV 缺少表头: {source}")
+            for field in reader.fieldnames:
+                if field not in fieldnames:
+                    fieldnames.append(field)
+            rows.extend(reader)
+    if not rows:
+        raise ValueError("输入 CSV 没有记录")
+
+    unique = _deduplicate_rows(rows)
+    output = output.expanduser().resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(unique)
     return output, len(rows), len(unique)
 
 
@@ -229,16 +296,101 @@ def append_bibtex(doi: str, output: Path) -> Path:
     return output
 
 
-def pull_zotero_json(output: Path, *, collection: str | None = None) -> tuple[Path, int]:
+def _zotero_client() -> zotero.Zotero:
     library_id = os.getenv("ZOTERO_LIBRARY_ID", "").strip()
     library_type = os.getenv("ZOTERO_LIBRARY_TYPE", "user").strip() or "user"
     api_key = os.getenv("ZOTERO_API_KEY", "").strip() or None
     if not library_id:
         raise ValueError("缺少 ZOTERO_LIBRARY_ID")
+    return zotero.Zotero(library_id, library_type, api_key)
 
-    client = zotero.Zotero(library_id, library_type, api_key)
+
+def _fetch_zotero_items(*, collection: str | None = None) -> list[dict]:
+    client = _zotero_client()
     first_page = client.collection_items(collection) if collection else client.items()
-    items = client.everything(first_page)
+    return client.everything(first_page)
+
+
+def list_zotero_collections() -> list[dict[str, str | int]]:
+    client = _zotero_client()
+    collections = client.everything(client.collections())
+    return [
+        {
+            "key": entry.get("key") or (entry.get("data") or {}).get("key") or "",
+            "name": (entry.get("data") or {}).get("name") or "",
+            "parent": (entry.get("data") or {}).get("parentCollection") or "",
+            "version": entry.get("version") or (entry.get("data") or {}).get("version") or 0,
+        }
+        for entry in collections
+    ]
+
+
+def _zotero_year(value: str) -> int | str:
+    match = re.search(r"(?:19|20)\d{2}", value)
+    return int(match.group()) if match else ""
+
+
+def _record_from_zotero_item(item: dict) -> dict[str, str | int | bool]:
+    data = item.get("data") or {}
+    language = data.get("language") or ""
+    creators = []
+    for creator in data.get("creators", []):
+        if creator.get("name"):
+            name = creator["name"]
+        elif language.lower().startswith("zh"):
+            name = "".join(
+                part for part in (creator.get("lastName"), creator.get("firstName")) if part
+            )
+        else:
+            name = " ".join(
+                part for part in (creator.get("firstName"), creator.get("lastName")) if part
+            )
+        if name:
+            creators.append(name)
+
+    tags = []
+    for entry in data.get("tags", []):
+        tag = entry.get("tag") if isinstance(entry, dict) else str(entry)
+        if tag:
+            tags.append(tag)
+
+    doi = data.get("DOI") or ""
+    url = data.get("url") or (f"https://doi.org/{_normalize_doi(doi)}" if doi else "")
+    source = (
+        data.get("publicationTitle")
+        or data.get("proceedingsTitle")
+        or data.get("university")
+        or data.get("publisher")
+        or ""
+    )
+    return {
+        "openalex_id": "",
+        "zotero_key": item.get("key") or data.get("key") or "",
+        "doi": doi,
+        "title": data.get("title") or "",
+        "publication_year": _zotero_year(data.get("date") or ""),
+        "work_type": data.get("itemType") or "",
+        "source": source,
+        "database": "Zotero",
+        "language": language,
+        "authors": "; ".join(creators),
+        "keywords": "; ".join(tags),
+        "cited_by_count": 0,
+        "is_oa": "",
+        "landing_page": url,
+        "abstract": data.get("abstractNote") or "",
+        "retrieved_at": datetime.now(UTC).isoformat(),
+    }
+
+
+def pull_zotero_csv(output: Path, *, collection: str | None = None) -> tuple[Path, int]:
+    items = _fetch_zotero_items(collection=collection)
+    records = [_record_from_zotero_item(item) for item in items]
+    return write_records(records, output), len(records)
+
+
+def pull_zotero_json(output: Path, *, collection: str | None = None) -> tuple[Path, int]:
+    items = _fetch_zotero_items(collection=collection)
     output = output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")

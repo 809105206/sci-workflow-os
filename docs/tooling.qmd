@@ -10,7 +10,7 @@ title: "工具栈与上游项目"
 | Quarto | [quarto-dev/quarto-cli](https://github.com/quarto-dev/quarto-cli) | 学术写作、网站、多格式构建 | 本地工具 + GitHub Action |
 | Quarto Actions | [quarto-dev/quarto-actions](https://github.com/quarto-dev/quarto-actions) | CI 渲染 | Actions 引用固定主版本 |
 | PyAlex | [J535D165/pyalex](https://github.com/J535D165/pyalex) | OpenAlex 文献检索 | Python 依赖 |
-| Pyzotero | [urschrei/pyzotero](https://github.com/urschrei/pyzotero) | Zotero API | Python 依赖 |
+| Pyzotero | [urschrei/pyzotero](https://github.com/urschrei/pyzotero) | Zotero API；中文数据库题录接入与标准化 | Python 依赖 |
 | Crossref REST API | [Crossref REST API](https://api.crossref.org/) | 无 key 的题录检索与 DOI/BibTeX | HTTP 接口 |
 | DVC | [treeverse/dvc](https://github.com/treeverse/dvc) | 数据、模型和实验版本 | `data` 可选依赖 |
 | Pandera | [unionai-oss/pandera](https://github.com/unionai-oss/pandera) | 表格数据验证 | `data` 可选依赖 |
