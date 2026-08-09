@@ -16,12 +16,13 @@
 - Codex 即开即用接管层：`AGENTS.md`、仓库级科研编排 Skill、活动项目指针和 `research-state.yaml` 共同恢复当前阶段与下一动作。
 - CodeGraph 可选本地索引：为 Codex 提供代码结构、调用关系和影响分析，并在文件修改或重新连接时增量同步。
 - Research Console 前端：研究总览、文献纳入决策、稿件实时质检，以及无需安装软件的浏览器科研作图。
-- 12 项最小可复现工作包与 G0–G10 阶段门模板。
+- 14 类最小可复现工作包与 G0–G10 阶段门模板，适用于任意新课题，不继承上一项目的研究内容。
 - 项目级通用中文文献模块：OpenAlex 中文过滤自动检索，知网/万方/维普/PubScholar/NSTL/国家哲社中心/ChinaXiv/SinoMed 正式入口，题名/链接/摘要候选预览，下载决策表，以及 Zotero 统一导入、去重与 CSL JSON 引用。
 - 本地只读 MCP：Codex/兼容客户端可调用中文来源目录、OpenAlex 中文检索和 Zotero collections/题录；API 密钥仅从本地环境变量读取。
 - DVC/Pandera 可选数据栈：数据版本、实验管线与表格数据验证。
 - Quarto/Pandoc 写作栈：默认生成网页与 Word；安装 TinyTeX 后可启用 PDF。
 - 标准化写作质量门：正文仅使用陈述句，阻断疑问句、对话式元话语和占位符，并提示无证据强化与模板化表达。
+- 双语成稿与论证闭环：每篇论文强制输出中文全文、英文全文、全文大纲、论点—证据—实验—作用—意义链和逐节双语对齐记录。
 - 零门槛图表工坊：单个离线 HTML 本地读取 CSV，导出 SVG、PNG、清洗 CSV 和可复现 YAML，不依赖 OriginPro、MATLAB 或 Python。
 - 开放批量绘图：Windows、macOS 与 Linux 一键安装 uv、Python 3.12、Matplotlib 和 Plotly；OriginPro 仅作为已有许可证用户的可选适配器。
 - GitHub Issues、Pull Requests、Actions、Pages 与 Releases：多人协作、在线站点和版本下载。
@@ -39,7 +40,7 @@ Windows 普通模式双击 `SETUP-CODEX.cmd`。确认信任该仓库并允许自
 ./SETUP-CODEX.sh --trusted
 ```
 
-设置完成后用 Codex 打开仓库，直接说明研究方向、目标或现有数据。Codex 会先读取 `AGENTS.md`，调用 `sciops codex resume` 恢复活动项目，再从第一项未完成任务继续。系统级权限、登录、凭据、外部发布和不可逆操作不会因可信模式而绕过平台安全边界。完整机制见[Codex 一键接管与连续科研](https://809105206.github.io/sci-workflow-os/docs/codex-takeover.html)。
+设置完成后用 Codex 打开仓库，直接说明研究方向、目标或现有数据。没有活动项目且未给出方向时，Codex 会先询问宽泛研究方向和已有数据/资源约束；不会沿用上一项目的题目、数据、方法或结论。随后 Codex 读取 `AGENTS.md`，调用 `sciops codex resume` 恢复或建立活动项目，并从第一项未完成任务继续。系统级权限、登录、凭据、外部发布和不可逆操作不会因可信模式而绕过平台安全边界。完整机制见[Codex 一键接管与连续科研](https://809105206.github.io/sci-workflow-os/docs/codex-takeover.html)。
 
 ### 1. 安装
 
@@ -150,6 +151,8 @@ uv run sciops audit workspace/my-paper --strict
 稿件标准化质检：
 
 ```bash
+uv run sciops writing lint workspace/my-paper/manuscript/zh/paper.qmd --strict
+uv run sciops writing lint workspace/my-paper/manuscript/en/paper.qmd --strict
 uv run sciops writing lint workspace/my-paper/manuscript/paper.qmd --strict
 ```
 
@@ -159,7 +162,7 @@ uv run sciops writing lint workspace/my-paper/manuscript/paper.qmd --strict
 uv sync --extra figures
 uv run sciops figure doctor
 uv run sciops figure render \
-  workspace/my-paper/figures/rop-effect.example.yaml \
+  workspace/my-paper/figures/effect-estimate.example.yaml \
   --backend auto
 ```
 

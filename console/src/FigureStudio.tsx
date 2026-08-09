@@ -36,7 +36,7 @@ type FigureStudioProps = {
   onNotice: (message: string) => void;
 };
 
-const demoCsv = `perturbation,effect,ci_low,ci_high
+const demoCsv = `exposure_change,effect_estimate,ci_low,ci_high
 -15,-0.20,-0.38,-0.02
 -10,-0.08,-0.24,0.08
 -5,0.21,0.05,0.37
@@ -133,13 +133,13 @@ export default function FigureStudio({ onNotice }: FigureStudioProps) {
   const chartElement = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ReturnType<typeof echarts.init> | null>(null);
   const [dataset, setDataset] = useState<ParsedDataset>(initial);
-  const [filename, setFilename] = useState("rop-effect.example.csv");
+  const [filename, setFilename] = useState("effect-estimate.example.csv");
   const [xColumn, setXColumn] = useState(initial.columns[0]);
   const [yColumn, setYColumn] = useState(initial.numericColumns[1] ?? initial.numericColumns[0]);
   const [kind, setKind] = useState<ChartKind>("line");
-  const [title, setTitle] = useState("钻井参数扰动的条件效应");
-  const [xLabel, setXLabel] = useState("参数扰动 (%)");
-  const [yLabel, setYLabel] = useState("ROP 效应 (m/h)");
+  const [title, setTitle] = useState("不同暴露变化下的效应估计");
+  const [xLabel, setXLabel] = useState("暴露变化 (%)");
+  const [yLabel, setYLabel] = useState("效应估计（结局单位）");
   const [error, setError] = useState("");
 
   const numericX = dataset.numericColumns.includes(xColumn);
@@ -321,7 +321,7 @@ export default function FigureStudio({ onNotice }: FigureStudioProps) {
           </div>
           <div className="upload-actions">
             <label className="upload-button"><input type="file" accept=".csv,text/csv" onChange={handleUpload} />选择 CSV</label>
-            <button onClick={() => loadDataset(demoCsv, "rop-effect.example.csv")}>载入示例</button>
+            <button onClick={() => loadDataset(demoCsv, "effect-estimate.example.csv")}>载入示例</button>
           </div>
           {error ? <p className="studio-error">{error}</p> : null}
           <div className="studio-step"><b>2</b><div><strong>选择变量</strong><p>Y 轴仅显示识别为数值的列。</p></div></div>

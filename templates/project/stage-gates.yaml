@@ -7,12 +7,18 @@ stages:
     reviewed_at: null
     evidence: []
     decision: ""
+    exit_criteria:
+      - 研究方向来自本项目输入，不继承其他项目的题目、数据、方法或结论
+      - 研究问题、资源、约束、目标读者和 Go/Pivot/Stop 条件已记录
   G1:
     status: pending
     owner: ""
     reviewed_at: null
     evidence: []
     decision: ""
+    exit_criteria:
+      - 候选选题经过重要性、缺口、可验证性、可行性、新颖性和适配度评分
+      - 最终方向由本项目证据和资源条件支持
   G2:
     status: pending
     owner: ""
@@ -49,6 +55,11 @@ stages:
     reviewed_at: null
     evidence: []
     decision: ""
+    exit_criteria:
+      - 全文大纲与论点—证据—实验—作用—意义链已冻结
+      - 中文全文与英文全文均完整且科学含义一致
+      - 数字、单位、公式、图表、引文和结论边界完成双语对齐
+      - 两份全文均通过严格写作质检并完成人工科学核验
   G8:
     status: pending
     owner: ""

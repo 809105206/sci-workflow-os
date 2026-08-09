@@ -1,0 +1,81 @@
+---
+title: "{{PROJECT_TITLE}}"
+author:
+  - name: "Author Name"
+date: "{{DATE}}"
+bibliography: ../references.bib
+format:
+  html:
+    toc: true
+  docx: default
+---
+
+## Abstract
+
+The abstract reports the background, verified gap, objective, design, methods, numerical results with uncertainty, bounded conclusion, and scientific or practical significance.
+
+## Keywords
+
+## Introduction
+
+### Problem and importance
+
+### Existing evidence and nearest-neighbor studies
+
+### Verified gap
+
+### Objective and evidence-bound contributions
+
+## Methods
+
+### Study design and data provenance
+
+### Population, samples, outcomes, exposures, variables, or interventions
+
+### Preprocessing and leakage controls
+
+### Experimental allocation or data splitting
+
+### Proposed method and strong baselines
+
+### Evaluation, uncertainty, and statistical analysis
+
+### Robustness, ablation, sensitivity, error, and external validation
+
+### Ethics, data availability, code availability, and reproducibility
+
+## Results
+
+### Sample flow and data quality
+
+### Primary result
+
+### Incremental value relative to strong baselines
+
+### Robustness and applicability boundary
+
+## Discussion
+
+### Principal findings
+
+### Comparison with prior evidence
+
+### Evidence-bounded interpretation
+
+### Scientific and practical significance
+
+### Limitations and transportability
+
+## Conclusion
+
+## Data availability
+
+## Code availability
+
+## Author contributions
+
+## Funding
+
+## Competing interests
+
+<!-- Before G7 passes: synchronize with ../zh/paper.qmd, complete ../bilingual-alignment.csv, and run strict writing lint. -->

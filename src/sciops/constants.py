@@ -5,6 +5,7 @@ from pathlib import Path
 STAGES = tuple(f"G{i}" for i in range(11))
 
 REQUIRED_PATHS = (
+    Path("00_research_intake.md"),
     Path("01_project_charter.md"),
     Path("02_search_log.csv"),
     Path("03_literature_matrix.csv"),
@@ -19,19 +20,35 @@ REQUIRED_PATHS = (
     Path("12_revision_log.md"),
     Path("stage-gates.yaml"),
     Path("manuscript/paper.qmd"),
+    Path("manuscript/outline.md"),
+    Path("manuscript/en/paper.qmd"),
+    Path("manuscript/zh/paper.qmd"),
+    Path("manuscript/bilingual-alignment.csv"),
     Path("manuscript/references.bib"),
     Path("archive/README.md"),
 )
 
 STAGE_ARTIFACTS: dict[str, tuple[Path, ...]] = {
-    "G0": (Path("01_project_charter.md"), Path("stage-gates.yaml")),
+    "G0": (
+        Path("00_research_intake.md"),
+        Path("01_project_charter.md"),
+        Path("stage-gates.yaml"),
+    ),
     "G1": (Path("01_project_charter.md"),),
     "G2": (Path("02_search_log.csv"), Path("03_literature_matrix.csv")),
     "G3": (Path("04_protocol.md"),),
     "G4": (Path("05_data_dictionary.csv"), Path("06_data_quality_report.md")),
     "G5": (Path("07_experiment_registry.csv"),),
     "G6": (Path("09_claim_evidence_map.md"),),
-    "G7": (Path("08_reproducibility_README.md"), Path("manuscript/paper.qmd")),
+    "G7": (
+        Path("08_reproducibility_README.md"),
+        Path("09_claim_evidence_map.md"),
+        Path("manuscript/outline.md"),
+        Path("manuscript/en/paper.qmd"),
+        Path("manuscript/zh/paper.qmd"),
+        Path("manuscript/bilingual-alignment.csv"),
+        Path("manuscript/paper.qmd"),
+    ),
     "G8": (Path("10_journal_scorecard.csv"), Path("11_submission_package/README.md")),
     "G9": (Path("12_revision_log.md"),),
     "G10": (Path("archive/README.md"),),

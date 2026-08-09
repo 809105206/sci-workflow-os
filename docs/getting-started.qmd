@@ -23,7 +23,7 @@ uv run sciops doctor
 uv run sciops init workspace/demo --title "Demo Study"
 ```
 
-生成目录包含 12 项最小工作包、G0–G10 阶段状态和文献/数据/稿件子目录。
+生成目录包含 14 类最小工作包、G0–G10 阶段状态和文献/数据/稿件子目录。`00_research_intake.md` 保存本项目独立的方向输入；未提供方向时，Codex 先询问研究领域或方向及已有数据/资源约束。
 
 ## 联网文献检索
 
@@ -91,4 +91,4 @@ uv run sciops audit workspace/demo --strict
 ./scripts/render.sh
 ```
 
-论文示例位于 `manuscript/paper.qmd`。目标期刊有官方 Quarto 模板时，应在单独分支中应用并人工核验版式。
+中英文全文分别位于 `manuscript/zh/paper.qmd` 和 `manuscript/en/paper.qmd`，共同大纲位于 `manuscript/outline.md`，逐节一致性记录位于 `manuscript/bilingual-alignment.csv`。`manuscript/paper.qmd` 是按目标期刊语言和格式冻结的投稿主稿。目标期刊有官方 Quarto 模板时，应在单独分支中应用并人工核验版式。

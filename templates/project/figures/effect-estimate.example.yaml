@@ -1,0 +1,15 @@
+data: effect-estimate.example.csv
+x: exposure_change
+y: effect_estimate
+lower: ci_low
+upper: ci_high
+kind: line
+title: Estimated effect across exposure changes
+x_label: Exposure change (%)
+y_label: Effect estimate (outcome units)
+sheet: Effect estimates
+graph: Conditional effect estimate
+outputs:
+  - ../outputs/figures/effect-estimate.pdf
+  - ../outputs/figures/effect-estimate.svg
+  - ../outputs/figures/effect-estimate.png

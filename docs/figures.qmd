@@ -37,7 +37,7 @@ uv run sciops figure doctor
 ```bash
 uv sync --extra figures
 uv run sciops figure render \
-  workspace/my-paper/figures/rop-effect.example.yaml \
+  workspace/my-paper/figures/effect-estimate.example.yaml \
   --backend matplotlib
 ```
 
@@ -49,9 +49,9 @@ OriginLab 提供的是 Python 自动化接口，而不是独立于 Origin 的跨
 
 ```bash
 uv sync --extra origin
-uv run sciops figure render figures/rop-effect.example.yaml \
+uv run sciops figure render figures/effect-estimate.example.yaml \
   --backend origin \
-  --project outputs/figures/rop-effect.opju
+  --project outputs/figures/effect-estimate.opju
 ```
 
 Linux、macOS 和 CI 环境使用 Matplotlib/Plotly 开放工具链。项目始终保存原始 CSV、YAML 规范和导出图，因此图形具有可复核来源。

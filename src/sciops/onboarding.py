@@ -192,7 +192,7 @@ def build_resume_report(project: Path | None = None) -> dict[str, Any]:
     if selected is None:
         report["status"] = "needs_project" if not candidates else "needs_project_selection"
         report["next_action"] = (
-            "Create a project from the user's research direction."
+            "Ask for the user's new research field or direction and available resources."
             if not candidates
             else "Select and activate one candidate project."
         )
@@ -201,6 +201,9 @@ def build_resume_report(project: Path | None = None) -> dict[str, Any]:
     state_path = selected / "research-state.yaml"
     state = _read_mapping(state_path)
     audit = audit_project(selected)
+    project_completed = audit.passed and bool(audit.stages) and all(
+        status == "passed" for status in audit.stages.values()
+    )
     first_incomplete = next(
         (stage for stage, status in audit.stages.items() if status != "passed"),
         "G10",
@@ -216,6 +219,10 @@ def build_resume_report(project: Path | None = None) -> dict[str, Any]:
             *(str(item) for item in STAGE_ARTIFACTS.get(active_stage, ())),
         ]
     next_actions = state.get("next_actions", [])
+    if project_completed:
+        next_actions = [
+            "Ask for a new research direction before creating a separate project workspace."
+        ]
     if not next_actions:
         next_actions = [f"Review the evidence and exit criteria for {active_stage}."]
     last_completed = str(state.get("last_completed_action", ""))
@@ -225,7 +232,13 @@ def build_resume_report(project: Path | None = None) -> dict[str, Any]:
         )
     report.update(
         {
-            "status": "ready" if not report["missing_required"] else "environment_incomplete",
+            "status": (
+                "project_completed"
+                if project_completed
+                else "environment_incomplete"
+                if report["missing_required"]
+                else "ready"
+            ),
             "active_stage": active_stage,
             "research_direction": str(state.get("research_direction", "")),
             "research_question": str(state.get("research_question", "")),

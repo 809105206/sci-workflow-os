@@ -8,6 +8,7 @@ def test_initialize_project(tmp_path: Path, monkeypatch) -> None:
     repository = Path(__file__).parents[1]
     monkeypatch.setenv("SCIOPS_REPOSITORY_ROOT", str(repository))
     destination = initialize_project(tmp_path / "study", title="Test Study")
+    assert (destination / "00_research_intake.md").exists()
     assert (destination / "01_project_charter.md").exists()
     assert "Test Study" in (destination / "01_project_charter.md").read_text(encoding="utf-8")
     chinese_strategy = destination / "literature/chinese-search-strategy.md"
@@ -16,8 +17,12 @@ def test_initialize_project(tmp_path: Path, monkeypatch) -> None:
     assert (destination / "literature/chinese-download-decisions.csv").exists()
     assert (destination / "writing-style.yaml").exists()
     assert (destination / ".vale.ini").exists()
-    assert (destination / "figures/rop-effect.example.yaml").exists()
+    assert (destination / "figures/effect-estimate.example.yaml").exists()
     assert (destination / "research-state.yaml").exists()
+    assert (destination / "manuscript/outline.md").exists()
+    assert (destination / "manuscript/en/paper.qmd").exists()
+    assert (destination / "manuscript/zh/paper.qmd").exists()
+    assert (destination / "manuscript/bilingual-alignment.csv").exists()
 
 
 def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
@@ -59,3 +64,14 @@ def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
     assert "console/node_modules/package/index.js" not in names
     assert "console/dist/index.html" in names
     assert "SCI-WORKFLOW-CONSOLE.html" in names
+
+
+def test_reusable_surfaces_are_not_bound_to_current_research_topic() -> None:
+    repository = Path(__file__).parents[1]
+    roots = (repository / "templates/project", repository / "console/src")
+    forbidden = ("机械钻速", "高维扰动", "ROP-DML-01")
+    for root in roots:
+        for path in root.rglob("*"):
+            if path.is_file() and path.suffix.lower() in {".md", ".qmd", ".yaml", ".csv", ".tsx"}:
+                text = path.read_text(encoding="utf-8")
+                assert not any(term in text for term in forbidden), path

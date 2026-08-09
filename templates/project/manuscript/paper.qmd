@@ -10,6 +10,8 @@ format:
   docx: default
 ---
 
+<!-- 本文件是目标期刊投稿主稿。G7 先完成 en/paper.qmd、zh/paper.qmd、outline.md 与 bilingual-alignment.csv，再按目标期刊语言冻结本文件。 -->
+
 ## Abstract
 
 The abstract states the background, precise evidence gap, objective, methods, numerical results with uncertainty, and a bounded conclusion.

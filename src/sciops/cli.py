@@ -165,7 +165,7 @@ def init_project(
     title: Annotated[str, typer.Option("--title", "-t", help="研究项目标题")],
     force: Annotated[bool, typer.Option(help="允许写入已有目录")] = False,
 ) -> None:
-    """从 12 项最小工作包创建研究项目。"""
+    """从通用 G0-G10 方法论和双语工作包创建研究项目。"""
     try:
         created = initialize_project(destination, title=title, force=force)
     except (FileNotFoundError, FileExistsError) as exc:

@@ -11,5 +11,6 @@ next_actions:
   - "Complete the one-page project charter and define stop conditions."
 entry_files:
   - "research-state.yaml"
+  - "00_research_intake.md"
   - "01_project_charter.md"
   - "stage-gates.yaml"

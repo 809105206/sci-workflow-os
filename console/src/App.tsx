@@ -5,6 +5,7 @@ import FigureStudio from "./FigureStudio";
 
 type View = "overview" | "literature" | "writing" | "figures";
 type Decision = "待判断" | "纳入" | "排除";
+type StageState = "done" | "active" | "next";
 
 const navItems: Array<{ id: View; label: string; mark: string }> = [
   { id: "overview", label: "研究总览", mark: "⌂" },
@@ -13,30 +14,28 @@ const navItems: Array<{ id: View; label: string; mark: string }> = [
   { id: "figures", label: "图表工坊", mark: "◇" },
 ];
 
-const stages = [
-  { id: "G0", title: "研究问题", detail: "高维扰动对机械钻速的参数效应", state: "done" },
-  { id: "G1", title: "证据检索", detail: "OpenAlex、Zotero 与中文候选池", state: "active" },
-  { id: "G2", title: "选题验证", detail: "可识别性、创新性与数据可得性", state: "active" },
-  { id: "G3", title: "研究设计", detail: "双重机器学习与交叉拟合", state: "next" },
-  { id: "G4", title: "数据治理", detail: "变量字典、缺失机制与版本记录", state: "next" },
-  { id: "G5", title: "模型与估计", detail: "扰动参数、异质效应与稳健性", state: "next" },
-  { id: "G6", title: "结果复核", detail: "安慰剂、敏感性与外推边界", state: "next" },
-  { id: "G7", title: "图表生成", detail: "浏览器作图与开放批量工具链", state: "next" },
-  { id: "G8", title: "论文写作", detail: "陈述句、证据约束与去模板化", state: "next" },
-  { id: "G9", title: "投稿质检", detail: "期刊适配、清单与可复现包", state: "next" },
-  { id: "G10", title: "投稿响应", detail: "审稿意见矩阵与版本归档", state: "next" },
-] as const;
-
-const papers = [
-  { id: 1, title: "Double/debiased machine learning for treatment and structural parameters", source: "The Econometrics Journal", year: 2018, type: "英文", relevance: 98, doi: "10.1111/ectj.12097" },
-  { id: 2, title: "Double machine learning for treatment and causal parameters", source: "arXiv", year: 2016, type: "英文", relevance: 94, doi: "10.48550/arXiv.1608.00060" },
-  { id: 3, title: "基于机器学习的机械钻速预测方法研究", source: "石油钻探技术", year: 2023, type: "中文", relevance: 91, doi: "候选记录" },
-  { id: 4, title: "钻井参数优化及机械钻速智能预测研究进展", source: "钻采工艺", year: 2022, type: "中文", relevance: 88, doi: "候选记录" },
-  { id: 5, title: "Causal machine learning and its application in drilling optimization", source: "Journal of Petroleum Science and Engineering", year: 2021, type: "英文", relevance: 86, doi: "待核验" },
-  { id: 6, title: "复杂地层钻井参数对机械钻速的影响分析", source: "断块油气田", year: 2020, type: "中文", relevance: 82, doi: "候选记录" },
+const stages: ReadonlyArray<{ id: string; title: string; detail: string; state: StageState }> = [
+  { id: "G0", title: "方向与章程", detail: "等待输入新课题方向、资源和边界", state: "active" },
+  { id: "G1", title: "选题筛选", detail: "候选问题评分与 Go / Pivot / Stop", state: "next" },
+  { id: "G2", title: "文献与缺口", detail: "中英文检索、证据地图与最近邻分析", state: "next" },
+  { id: "G3", title: "研究设计", detail: "目标、变量、对照、统计与识别条件", state: "next" },
+  { id: "G4", title: "数据就绪", detail: "来源、质量、许可、切分与泄漏控制", state: "next" },
+  { id: "G5", title: "核心结果", detail: "主实验、强基线、效应量与不确定性", state: "next" },
+  { id: "G6", title: "证据加固", detail: "消融、稳健性、误差与外部验证", state: "next" },
+  { id: "G7", title: "双语成稿", detail: "中英全文、大纲、论证链与对齐记录", state: "next" },
+  { id: "G8", title: "选刊投稿", detail: "期刊适配、格式、伦理与投稿包", state: "next" },
+  { id: "G9", title: "同行评审", detail: "意见矩阵、证据补强与版本记录", state: "next" },
+  { id: "G10", title: "发表归档", detail: "校样、数据代码归档与成果传播", state: "next" },
 ];
 
-const initialDraft = `本文估计钻压、转速和排量扰动对机械钻速的条件平均效应。研究采用交叉拟合的双重机器学习方法控制高维地层与工况混杂因素。为什么该方法更可靠？当然可以通过更多模型进一步证明。结果显著提升了预测能力。`;
+const papers = [
+  { id: 1, title: "示例英文题录：研究问题与领域证据", source: "导入后显示来源", year: 2026, type: "英文", relevance: 92, doi: "演示记录" },
+  { id: 2, title: "示例英文题录：方法与强基线", source: "导入后显示来源", year: 2025, type: "英文", relevance: 88, doi: "演示记录" },
+  { id: 3, title: "示例中文题录：研究对象与应用场景", source: "导入后显示来源", year: 2026, type: "中文", relevance: 90, doi: "演示记录" },
+  { id: 4, title: "示例中文题录：现有方法与研究边界", source: "导入后显示来源", year: 2024, type: "中文", relevance: 84, doi: "演示记录" },
+];
+
+const initialDraft = `本研究评估候选方法对目标结果的影响。研究采用预先冻结的设计控制主要偏差来源。为什么该方法更可靠？当然可以通过更多实验进一步证明。结果显著提升了预测能力。`;
 
 function lintDraft(text: string) {
   const checks = [
@@ -57,7 +56,7 @@ function lintDraft(text: string) {
   return { issues, errors, warnings, score };
 }
 
-function StatusPill({ state }: { state: "done" | "active" | "next" }) {
+function StatusPill({ state }: { state: StageState }) {
   const labels = { done: "已完成", active: "进行中", next: "待启动" };
   return <span className={`stage-status ${state}`}>{labels[state]}</span>;
 }
@@ -66,7 +65,7 @@ export default function App() {
   const [view, setView] = useState<View>("overview");
   const [query, setQuery] = useState("");
   const [language, setLanguage] = useState("全部");
-  const [decisions, setDecisions] = useState<Record<number, Decision>>({ 1: "纳入", 2: "纳入" });
+  const [decisions, setDecisions] = useState<Record<number, Decision>>({});
   const [draft, setDraft] = useState(initialDraft);
   const [notice, setNotice] = useState("本地工作流已就绪");
 
@@ -129,7 +128,7 @@ export default function App() {
             </aside>
           </div>
           <div className="rule-cards">
-            {[{ n: "01", t: "句式约束", d: "正文仅保留陈述句；研究问题改写为假设或目标。" }, { n: "02", t: "证据约束", d: "定量结论绑定效应量、区间、图表或可核验引文。" }, { n: "03", t: "相关性约束", d: "每段服务于研究问题、方法、结果或边界，不保留任务说明。" }].map((rule) => <article key={rule.n}><span>{rule.n}</span><div><h3>{rule.t}</h3><p>{rule.d}</p></div></article>)}
+            {[{ n: "01", t: "句式约束", d: "正文仅保留陈述句；研究问题改写为假设或目标。" }, { n: "02", t: "证据约束", d: "定量结论绑定效应量、区间、图表或可核验引文。" }, { n: "03", t: "相关性约束", d: "每段服务于研究问题、方法、结果或边界，不保留任务说明。" }, { n: "04", t: "论证链", d: "每个论点记录论据、实验、检验内容、全文作用和边界化意义。" }, { n: "05", t: "双语对齐", d: "中文稿与英文稿共享数字、单位、公式、图表、引文和结论范围。" }].map((rule) => <article key={rule.n}><span>{rule.n}</span><div><h3>{rule.t}</h3><p>{rule.d}</p></div></article>)}
           </div>
         </section>
       );
@@ -154,21 +153,21 @@ export default function App() {
 
     return (
       <section className="view-shell">
-        <div className="view-heading"><div><p className="eyebrow">Research operating system</p><h1>研究总览</h1><p>从研究问题、证据筛选到规范写作和投稿图表，全部落在可复现流程中。</p></div><button className="primary-button" onClick={() => setView("literature")}>继续 G1 检索</button></div>
+        <div className="view-heading"><div><p className="eyebrow">Research operating system</p><h1>研究总览</h1><p>每个新项目从独立方向输入开始，再进入选题、证据、实验、双语成稿与发表归档。</p></div><button className="primary-button" onClick={() => setNotice("请先向 Codex 说明研究方向与已有数据或资源")}>开始 G0 方向输入</button></div>
         <div className="metric-grid">
-          <article className="metric-card focus"><span>当前阶段</span><strong>G1–G2</strong><p>证据检索与选题验证</p><i>→</i></article>
-          <article className="metric-card"><span>文献库</span><strong>18</strong><p>11 条 Zotero · 7 条中文候选</p><i>+6</i></article>
+          <article className="metric-card focus"><span>当前阶段</span><strong>G0</strong><p>等待新项目方向</p><i>→</i></article>
+          <article className="metric-card"><span>文献库</span><strong>0</strong><p>方向确认后建立独立候选池</p><i>—</i></article>
           <article className="metric-card"><span>质量规则</span><strong>24</strong><p>陈述句 · 证据 · 相关性</p><i>100%</i></article>
-          <article className="metric-card"><span>自动检查</span><strong>22</strong><p>当前测试全部通过</p><i className="healthy">健康</i></article>
+          <article className="metric-card"><span>双语交付</span><strong>5</strong><p>中英全文 · 大纲 · 论证链 · 对齐</p><i className="healthy">强制</i></article>
         </div>
         <div className="overview-grid">
           <div className="panel pipeline-panel">
-            <div className="panel-title"><span>G0–G10 研究流程</span><small>2 / 11 已启动</small></div>
+            <div className="panel-title"><span>G0–G10 研究流程</span><small>等待方向输入</small></div>
             <div className="pipeline-list">{stages.map((stage) => <button key={stage.id} onClick={() => setNotice(`${stage.id} · ${stage.title}`)}><span className={`stage-mark ${stage.state}`}>{stage.state === "done" ? "✓" : stage.id.replace("G", "")}</span><div><strong>{stage.id} · {stage.title}</strong><p>{stage.detail}</p></div><StatusPill state={stage.state} /></button>)}</div>
           </div>
           <aside className="overview-aside">
-            <div className="panel project-card"><p className="eyebrow">Active project</p><h2>高维扰动与机械钻速参数效应</h2><p>以双重机器学习估计钻压、转速、排量等参数扰动的因果效应与异质性。</p><div className="tag-row"><span>DML</span><span>高维控制</span><span>钻井优化</span></div><div className="progress"><span><b>项目成熟度</b><em>28%</em></span><i><b /></i></div></div>
-            <div className="panel activity-card"><div className="panel-title"><span>近期活动</span><small>本地记录</small></div>{[{c:"teal",t:"Zotero 连接已验证",d:"研究库可写入与去重",time:"今天"},{c:"gold",t:"中文候选池已生成",d:"题名、摘要、引用地址",time:"今天"},{c:"blue",t:"SCI.md 已整理",d:"G0–G10 标准流程",time:"昨天"}].map((item) => <article key={item.t}><i className={item.c}/><div><strong>{item.t}</strong><p>{item.d}</p></div><time>{item.time}</time></article>)}</div>
+            <div className="panel project-card"><p className="eyebrow">Active project</p><h2>尚未载入研究项目</h2><p>向 Codex 说明宽泛方向即可建立全新的候选选题、证据池和研究工作区。</p><div className="tag-row"><span>方向独立</span><span>G0–G10</span><span>中英双稿</span></div><div className="progress"><span><b>项目成熟度</b><em>0%</em></span><i><b style={{ width: "0%" }} /></i></div></div>
+            <div className="panel activity-card"><div className="panel-title"><span>方法论能力</span><small>通用模板</small></div>{[{c:"teal",t:"新项目独立建档",d:"不继承上一课题内容",time:"G0"},{c:"gold",t:"双语证据对齐",d:"数字、图表、引文与边界一致",time:"G7"},{c:"blue",t:"论证链审计",d:"论点、实验、作用与意义闭环",time:"G6–G7"}].map((item) => <article key={item.t}><i className={item.c}/><div><strong>{item.t}</strong><p>{item.d}</p></div><time>{item.time}</time></article>)}</div>
           </aside>
         </div>
       </section>
@@ -180,7 +179,7 @@ export default function App() {
       <aside className="sidebar">
         <div className="brand"><span>Σ</span><div><strong>SCI Workflow</strong><small>Research OS</small></div></div>
         <nav>{navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><span>{item.mark}</span>{item.label}{item.id === "writing" && lint.errors > 0 ? <b>{lint.errors}</b> : null}</button>)}</nav>
-        <div className="sidebar-block"><span>工作空间</span><strong>ROP-DML-01</strong><small>本地优先 · Git 可追踪</small></div>
+        <div className="sidebar-block"><span>工作空间</span><strong>NEW-STUDY</strong><small>方向独立 · 本地优先</small></div>
         <div className="sidebar-footer"><span className="avatar">研</span><div><strong>研究者</strong><small>项目所有者</small></div><button aria-label="更多设置">•••</button></div>
       </aside>
       <div className="main-column">

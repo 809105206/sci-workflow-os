@@ -13,10 +13,14 @@ title: "标准化学术写作质量门"
 ## 投稿前执行
 
 ```bash
+uv run sciops writing lint workspace/my-paper/manuscript/zh/paper.qmd --strict
+uv run sciops writing lint workspace/my-paper/manuscript/en/paper.qmd --strict
 uv run sciops writing lint workspace/my-paper/manuscript/paper.qmd --strict
 ```
 
 普通模式只由错误阻断；`--strict` 会让警告也阻断。规则通过只说明形式约束满足，作者仍需逐项核验论据、统计结果、引文和外推边界。
+
+G7 通过时，结构审计还会检查中英文稿的摘要、引言、方法、结果、讨论和结论是否具有实质内容，并要求双语对齐表全部标记完成、核验人和日期完整、至少一条论点—证据—实验—作用—意义链达到 `verified` 或 `complete`。空白骨架不能通过 G7。
 
 ## 陈述句改写规范
 
@@ -24,4 +28,4 @@ uv run sciops writing lint workspace/my-paper/manuscript/paper.qmd --strict
 
 ## 证据与相关性
 
-`09_claim_evidence_map.md` 记录核心结论、图表或数据位置、可核验引文和适用边界。正文段落如果不能映射到研究问题、方法、结果、解释、局限或可复现性，则需要删除、合并或移至补充材料。
+`09_claim_evidence_map.md` 记录中文与英文核心论点、论据来源、实验或分析、检验内容、结果与不确定性、替代解释、对全文的作用及科学或工程意义。`manuscript/outline.md` 冻结全文结构，`manuscript/bilingual-alignment.csv` 逐节核验论点、数字、单位、公式、图表、引文和结论边界。正文段落如果不能映射到研究问题、方法、结果、解释、局限或可复现性，则需要删除、合并或移至补充材料。
