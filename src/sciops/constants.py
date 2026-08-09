@@ -54,6 +54,7 @@ EXCLUDED_DIR_NAMES = {
     ".tools",
     "__pycache__",
     ".pytest_cache",
+    ".quarto",
     ".ruff_cache",
     "_site",
     "build",
