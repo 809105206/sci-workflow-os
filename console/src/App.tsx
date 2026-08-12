@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import FigureStudio from "./FigureStudio";
 
-type View = "overview" | "memory" | "literature" | "writing" | "figures";
+type View = "overview" | "memory" | "credentials" | "literature" | "writing" | "figures";
 type Decision = "待判断" | "纳入" | "排除";
 type StageState = "done" | "active" | "next";
 
@@ -40,9 +40,34 @@ type ResumeReport = {
   } | null;
 };
 
+type CredentialFieldStatus = {
+  key: string;
+  env: string;
+  label: string;
+  secret: boolean;
+  required: boolean;
+};
+
+type CredentialProviderStatus = {
+  key: string;
+  label: string;
+  description: string;
+  configured: boolean;
+  configured_fields: string[];
+  stored_fields: string[];
+  fields: CredentialFieldStatus[];
+};
+
+type CredentialStatus = {
+  file_exists: boolean;
+  schema_version: number;
+  providers: CredentialProviderStatus[];
+};
+
 const navItems: Array<{ id: View; label: string; mark: string }> = [
   { id: "overview", label: "研究总览", mark: "⌂" },
   { id: "memory", label: "项目记忆", mark: "◎" },
+  { id: "credentials", label: "凭据中心", mark: "▣" },
   { id: "literature", label: "文献雷达", mark: "⌕" },
   { id: "writing", label: "写作质检", mark: "✓" },
   { id: "figures", label: "图表工坊", mark: "◇" },
@@ -103,6 +128,25 @@ export default function App() {
   const [draft, setDraft] = useState(initialDraft);
   const [notice, setNotice] = useState("本地工作流已就绪");
   const [report, setReport] = useState<ResumeReport | null>(null);
+  const [credentialState, setCredentialState] = useState<CredentialStatus | null>(null);
+  const [credentialForm, setCredentialForm] = useState<Record<string, string>>({});
+  const [credentialBusy, setCredentialBusy] = useState(false);
+  const [credentialLocal, setCredentialLocal] = useState<boolean | null>(null);
+
+  const refreshCredentialStatus = () => fetch("/api/credentials/status", { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error("credential service unavailable");
+      return response.json() as Promise<CredentialStatus>;
+    })
+    .then((value) => {
+      setCredentialState(value);
+      setCredentialLocal(true);
+      return value;
+    })
+    .catch(() => {
+      setCredentialLocal(false);
+      return null;
+    });
 
   useEffect(() => {
     let active = true;
@@ -118,8 +162,89 @@ export default function App() {
         }
       })
       .catch(() => undefined);
+    void refreshCredentialStatus();
     return () => { active = false; };
   }, []);
+
+  const credentialRequest = (path: string, body: object) => fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Sciops-Local": "1" },
+    body: JSON.stringify(body),
+  });
+
+  const exportCredentials = async () => {
+    setCredentialBusy(true);
+    try {
+      const response = await credentialRequest("/api/credentials/export", {});
+      if (!response.ok) {
+        const error = await response.json() as { message?: string };
+        throw new Error(error.message || "导出失败");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "sciops-credentials.private.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setNotice("私有凭据包已下载；请移入密码库或加密介质")
+      await refreshCredentialStatus();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "凭据导出失败");
+    } finally {
+      setCredentialBusy(false);
+    }
+  };
+
+  const importCredentials = async (file: File) => {
+    setCredentialBusy(true);
+    try {
+      if (file.size > 64 * 1024) throw new Error("凭据文件超过 64 KiB 上限");
+      const payload = JSON.parse(await file.text()) as object;
+      const response = await credentialRequest("/api/credentials/import", payload);
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message || "导入失败");
+      setCredentialForm({});
+      await refreshCredentialStatus();
+      setNotice("凭据包已导入；后续检索命令将自动加载")
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "凭据导入失败");
+    } finally {
+      setCredentialBusy(false);
+    }
+  };
+
+  const saveCredentialForm = async () => {
+    const services = Object.fromEntries((credentialState?.providers ?? []).map((provider) => [
+      provider.key,
+      Object.fromEntries(provider.fields.map((field) => [
+        field.key,
+        credentialForm[`${provider.key}.${field.key}`]?.trim() ?? "",
+      ]).filter(([, value]) => value)),
+    ]).filter(([, fields]) => Object.keys(fields).length));
+    if (!Object.keys(services).length) {
+      setNotice("未输入新凭据；现有值保持不变");
+      return;
+    }
+    setCredentialBusy(true);
+    try {
+      const response = await credentialRequest("/api/credentials/import", {
+        schema_version: 2,
+        kind: "sciops-portable-credentials",
+        profile: "default",
+        services,
+      });
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message || "保存失败");
+      setCredentialForm({});
+      await refreshCredentialStatus();
+      setNotice("新凭据已合并保存；服务端未向前端返回任何值")
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "凭据保存失败");
+    } finally {
+      setCredentialBusy(false);
+    }
+  };
 
   const activeStage = report?.active_stage ?? "G0";
   const context = report?.context_bundle;
@@ -144,6 +269,41 @@ export default function App() {
   const lint = useMemo(() => lintDraft(draft), [draft]);
 
   const renderView = () => {
+    if (view === "credentials") {
+      const providers = credentialState?.providers ?? [];
+      const configuredCount = providers.filter((provider) => provider.configured).length;
+      return (
+        <section className="view-shell">
+          <div className="view-heading">
+            <div><p className="eyebrow">Local credential vault</p><h1>登录凭据包</h1><p>把本工具需要的 API Key 和 Library ID 抽象为可迁移 JSON；不采集网站密码、Cookie 或 GitHub OAuth。</p></div>
+            <span className={`memory-badge ${credentialLocal ? "ready" : "waiting"}`}><i />{credentialLocal ? "本机服务已连接" : "仅完整本地项目可用"}</span>
+          </div>
+          <div className="credential-warning"><b>私密文件</b><p>导出的 JSON 含真实凭据。仅本人保管，建议存入密码管理器或加密介质；不得上传 GitHub、聊天、论文附件或公共网盘。</p></div>
+          <div className="metric-grid credential-metrics">
+            <article className="metric-card focus"><span>已就绪服务</span><strong>{configuredCount}</strong><p>共 {providers.length || 2} 个受支持服务</p><i>LOCAL</i></article>
+            <article className="metric-card"><span>凭据格式</span><strong>v{credentialState?.schema_version ?? 2}</strong><p>服务化字段 · 白名单校验</p><i>JSON</i></article>
+            <article className="metric-card"><span>本机文件</span><strong>{credentialState?.file_exists ? "有" : "无"}</strong><p>Git / ZIP / Release 强制排除</p><i>{credentialState?.file_exists ? "600" : "—"}</i></article>
+            <article className="metric-card"><span>网页登录态</span><strong>0</strong><p>密码 · Cookie · OAuth 均不导出</p><i className="healthy">隔离</i></article>
+          </div>
+          <div className="credential-actions panel">
+            <div><p className="eyebrow">Portable package</p><h2>一键迁移</h2><p>导出当前配置，或选择另一台电脑导出的 JSON 自动恢复。</p></div>
+            <div className="credential-buttons">
+              <button className="primary-button" disabled={!credentialLocal || credentialBusy || configuredCount === 0} onClick={() => void exportCredentials()}>{credentialBusy ? "处理中" : "导出我的凭据 JSON"}</button>
+              <label className={`secondary-button ${!credentialLocal || credentialBusy ? "disabled" : ""}`}>导入凭据 JSON<input type="file" accept="application/json,.json" disabled={!credentialLocal || credentialBusy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importCredentials(file); event.currentTarget.value = ""; }} /></label>
+            </div>
+          </div>
+          <div className="credential-provider-grid">
+            {providers.length ? providers.map((provider) => <article className="panel provider-card" key={provider.key}>
+              <div className="provider-heading"><div><span>{provider.key.slice(0, 2).toUpperCase()}</span><div><h2>{provider.label}</h2><p>{provider.description}</p></div></div><b className={provider.configured ? "configured" : "missing"}>{provider.configured ? "已配置" : "未完成"}</b></div>
+              <div className="credential-fields">{provider.fields.map((field) => <label key={field.key}><span>{field.label}{field.required ? <b>必填</b> : null}</span><input type={field.secret ? "password" : "text"} autoComplete="off" value={credentialForm[`${provider.key}.${field.key}`] ?? ""} placeholder={provider.configured_fields.includes(field.key) ? "已配置；留空保持原值" : "输入后保存到本机"} onChange={(event) => setCredentialForm({ ...credentialForm, [`${provider.key}.${field.key}`]: event.target.value })} /></label>)}</div>
+              <p className="stored-note">本机已保存字段：{provider.stored_fields.length ? provider.stored_fields.join(" · ") : "无"}</p>
+            </article>) : <article className="panel offline-credential"><h2>当前为在线或离线静态页面</h2><p>凭据操作只在下载完整项目并通过 `OPEN-CONSOLE` 启动后启用。公共网页永远无法读取本机凭据。</p></article>}
+          </div>
+          {providers.length ? <div className="credential-save"><button className="primary-button" disabled={!credentialLocal || credentialBusy} onClick={() => void saveCredentialForm()}>合并保存新输入</button><p>空字段不会覆盖原值。保存成功后，服务端只返回状态，不返回 key。</p></div> : null}
+        </section>
+      );
+    }
+
     if (view === "memory") {
       const memory = report?.memory;
       const semanticItems = context?.semantic_memory ?? [];

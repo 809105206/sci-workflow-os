@@ -2,12 +2,13 @@
 title: "Research Console 前端"
 ---
 
-Research Console 是 SCI Workflow OS 的浏览器工作台，面向研究者提供五个集中入口：
+Research Console 是 SCI Workflow OS 的浏览器工作台，面向研究者提供六个集中入口：
 
 公开入口：<https://809105206.github.io/sci-workflow-os/console/>。即时部署入口：<https://sci-workflow-console.z809105206.chatgpt.site>。
 
 - 研究总览展示 G0–G10 阶段、当前项目成熟度和本地活动。
 - 项目记忆展示当前目标、下一动作、工作集、有效决策、最近里程碑和上下文预算。
+- 凭据中心在本机同源服务内完成 API 凭据录入、一键导出、验证和合并导入；不回显已保存值。
 - 文献雷达对中英文候选题名、期刊、DOI、摘要相关度和下载决策进行筛选。
 - 写作质检实时显示陈述句、对话式表达、元话语、空泛强化和占位符问题。
 - 图表工坊直接在浏览器本地读取 CSV，选择 X/Y 列与图形类型，并导出 SVG、PNG、CSV 和复现 YAML。

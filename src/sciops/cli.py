@@ -14,6 +14,7 @@ from sciops.credentials import (
     CredentialError,
     credential_status,
     export_dotenv_to_json,
+    export_runtime_to_json,
     import_credentials,
     load_runtime_credentials,
 )
@@ -213,6 +214,24 @@ def credentials_export_env(
         raise typer.Exit(2) from exc
     console.print(f"[green]已保存本机凭据[/green] {target}")
     console.print("文件权限已设为仅当前用户读写；Git 和研究 ZIP 均排除该文件。")
+
+
+@credentials_app.command("export")
+def credentials_export(
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="输出路径；默认写入本机私有凭据文件"),
+    ] = None,
+    profile: Annotated[str, typer.Option(help="凭据配置名称")] = "default",
+) -> None:
+    """一键导出当前已配置服务为可迁移凭据包；不打印任何值。"""
+    try:
+        target = export_runtime_to_json(destination=output, profile=profile)
+    except CredentialError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]凭据包已导出[/green] {target}")
+    console.print("该文件含真实凭据；仅本人保管，不得提交或公开分享。")
 
 
 @credentials_app.command("import-json")

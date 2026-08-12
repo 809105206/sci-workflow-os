@@ -15,7 +15,7 @@
 - `sciops` 命令行：项目初始化、G0–G10 阶段审计、联网文献检索、去重、DOI/BibTeX 获取和安全打包。
 - Codex 即开即用接管层：`AGENTS.md`、仓库级科研编排 Skill、活动项目指针和 `research-state.yaml` 共同恢复当前阶段与下一动作。
 - 课题级科研记忆：受字符预算约束的当前上下文、带来源语义记忆、追加式里程碑和按需历史检索；不同课题完全隔离。
-- 可迁移本机凭据 JSON：一次导出 OpenAlex/Zotero 配置，后续副本一条命令恢复；Git、研究 ZIP 和 Release 强制排除。
+- 可迁移本机凭据包：前端或双击脚本一键导出/导入 OpenAlex、Zotero 配置；服务注册表可扩展，Git、研究 ZIP 和 Release 强制排除。
 - CodeGraph 可选本地索引：为 Codex 提供代码结构、调用关系和影响分析，并在文件修改或重新连接时增量同步。
 - Research Console 前端：研究总览、文献纳入决策、稿件实时质检，以及无需安装软件的浏览器科研作图。
 - 14 类最小可复现工作包与 G0–G10 阶段门模板，适用于任意新课题，不继承上一项目的研究内容。
@@ -111,12 +111,15 @@ PowerShell 可用 `Copy-Item .env.example .env`。已在终端设置的环境变
 
 ```bash
 uv run --frozen sciops credentials export-env
+uv run --frozen sciops credentials export
 uv run --frozen sciops credentials status
 # 新电脑或新副本
 uv run --frozen sciops credentials import-json /path/to/your-credentials.json
 ```
 
 详情见[本机凭据 JSON](https://809105206.github.io/sci-workflow-os/docs/credentials.html)。GitHub CLI OAuth 不复制到该 JSON。
+
+完整本地项目还可通过 `OPEN-CONSOLE` 进入“凭据中心”，一键下载或导入私有 JSON。Windows 用户可直接双击 `EXPORT-CREDENTIALS.cmd`。该包只包含注册服务的 API 凭据，不包含网站密码、Cookie 或浏览器登录态。
 
 ### 中文文献：开放检索 + 授权数据库 + Zotero
 
