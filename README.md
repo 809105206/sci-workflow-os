@@ -14,6 +14,8 @@
 
 - `sciops` 命令行：项目初始化、G0–G10 阶段审计、联网文献检索、去重、DOI/BibTeX 获取和安全打包。
 - Codex 即开即用接管层：`AGENTS.md`、仓库级科研编排 Skill、活动项目指针和 `research-state.yaml` 共同恢复当前阶段与下一动作。
+- 课题级科研记忆：受字符预算约束的当前上下文、带来源语义记忆、追加式里程碑和按需历史检索；不同课题完全隔离。
+- 可迁移本机凭据 JSON：一次导出 OpenAlex/Zotero 配置，后续副本一条命令恢复；Git、研究 ZIP 和 Release 强制排除。
 - CodeGraph 可选本地索引：为 Codex 提供代码结构、调用关系和影响分析，并在文件修改或重新连接时增量同步。
 - Research Console 前端：研究总览、文献纳入决策、稿件实时质检，以及无需安装软件的浏览器科研作图。
 - 14 类最小可复现工作包与 G0–G10 阶段门模板，适用于任意新课题，不继承上一项目的研究内容。
@@ -41,6 +43,15 @@ Windows 普通模式双击 `SETUP-CODEX.cmd`。确认信任该仓库并允许自
 ```
 
 设置完成后用 Codex 打开仓库，直接说明研究方向、目标或现有数据。没有活动项目且未给出方向时，Codex 会先询问宽泛研究方向和已有数据/资源约束；不会沿用上一项目的题目、数据、方法或结论。随后 Codex 读取 `AGENTS.md`，调用 `sciops codex resume` 恢复或建立活动项目，并从第一项未完成任务继续。系统级权限、登录、凭据、外部发布和不可逆操作不会因可信模式而绕过平台安全边界。完整机制见[Codex 一键接管与连续科研](https://809105206.github.io/sci-workflow-os/docs/codex-takeover.html)。
+
+旧项目首次启用分层记忆时执行：
+
+```bash
+uv run --frozen sciops memory init workspace/my-paper
+uv run --frozen sciops codex resume --json
+```
+
+原理和记忆治理见[课题级科研记忆](https://809105206.github.io/sci-workflow-os/docs/memory.html)。
 
 ### 1. 安装
 
@@ -96,7 +107,16 @@ PowerShell 可用 `Copy-Item .env.example .env`。已在终端设置的环境变
 - OpenAlex：登录 [API settings](https://openalex.org/settings/api) 后创建免费 key，填入 `OPENALEX_API_KEY`。
 - Zotero：登录 [API Keys](https://www.zotero.org/settings/keys)，创建仅供本工具使用的 private key。只拉取文献时授予 library read access 即可；同一页面显示的数字 user ID 填入 `ZOTERO_LIBRARY_ID`，生成的 key 填入 `ZOTERO_API_KEY`。个人库保持 `ZOTERO_LIBRARY_TYPE=user`；群组库改为 `group` 并使用数字 group ID。
 
-真实凭据只保存在本机 `.env` 或 CI 的加密 Secrets 中，不要放入 issue、聊天、README、命令历史或 Git 提交。
+真实凭据只保存在本机 `.env`、未跟踪的 `.sciops-credentials.local.json`、环境变量或 CI 的加密 Secrets 中，不要放入 issue、聊天、README、命令历史或 Git 提交。把当前 `.env` 转为可重复使用的本机 JSON：
+
+```bash
+uv run --frozen sciops credentials export-env
+uv run --frozen sciops credentials status
+# 新电脑或新副本
+uv run --frozen sciops credentials import-json /path/to/your-credentials.json
+```
+
+详情见[本机凭据 JSON](https://809105206.github.io/sci-workflow-os/docs/credentials.html)。GitHub CLI OAuth 不复制到该 JSON。
 
 ### 中文文献：开放检索 + 授权数据库 + Zotero
 
@@ -139,7 +159,7 @@ uv run sciops zotero export-csl --collection COLLECTION_KEY \
 uv run --frozen sciops-mcp
 ```
 
-直接启动后保持安静并等待输入是正常现象。配置、五个只读工具、凭据边界和远程部署说明见[中文文献 MCP 接入](https://809105206.github.io/sci-workflow-os/docs/mcp.html)。
+直接启动后保持安静并等待输入是正常现象。配置、八个只读工具、凭据边界和远程部署说明见[中文文献 MCP 接入](https://809105206.github.io/sci-workflow-os/docs/mcp.html)。
 
 ### 5. 审计阶段完成度
 

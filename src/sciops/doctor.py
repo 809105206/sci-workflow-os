@@ -27,10 +27,8 @@ def _local_tool(name: str) -> Path | None:
             root / ".tools/codegraph/node_modules/.bin/codegraph",
             root / ".tools/codegraph/node_modules/.bin/codegraph.cmd",
             root / ".tools/codegraph-standalone/v1.5.0/bin/codegraph",
-            root
-            / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-x64/bin/codegraph.cmd",
-            root
-            / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-arm64/bin/codegraph.cmd",
+            root / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-x64/bin/codegraph.cmd",
+            root / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-arm64/bin/codegraph.cmd",
         ),
     }
     for candidate in candidates.get(name, ()):
@@ -80,19 +78,25 @@ def run_checks() -> list[Check]:
         local_config = repository_root() / ".tools/gh-config"
         if local_config.is_dir():
             gh_env["GH_CONFIG_DIR"] = str(local_config)
-        auth = subprocess.run(
-            [str(gh), "auth", "status"],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=10,
-            env=gh_env,
-        )
+        try:
+            auth = subprocess.run(
+                [str(gh), "auth", "status"],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+                env=gh_env,
+            )
+            authenticated = auth.returncode == 0
+            detail = "authenticated" if authenticated else "not authenticated"
+        except (OSError, subprocess.TimeoutExpired):
+            authenticated = False
+            detail = "authentication check unavailable"
         checks.append(
             Check(
                 "GitHub auth",
-                auth.returncode == 0,
-                "authenticated" if auth.returncode == 0 else "not authenticated",
+                authenticated,
+                detail,
                 False,
             )
         )

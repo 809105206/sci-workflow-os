@@ -30,7 +30,15 @@ def template_root() -> Path:
 
 
 def _replace_tokens(path: Path, replacements: dict[str, str]) -> None:
-    if path.suffix.lower() not in {".md", ".qmd", ".yaml", ".yml", ".csv", ".bib"}:
+    if path.suffix.lower() not in {
+        ".md",
+        ".qmd",
+        ".yaml",
+        ".yml",
+        ".csv",
+        ".bib",
+        ".jsonl",
+    }:
         return
     text = path.read_text(encoding="utf-8")
     for token, value in replacements.items():

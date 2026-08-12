@@ -20,5 +20,8 @@ def test_mcp_exposes_generic_chinese_literature_tools() -> None:
         "preview_chinese_candidates",
         "zotero_collections",
         "zotero_collection_records",
+        "current_research_context",
+        "research_memory_status",
+        "search_research_memory",
     } <= tool_names
     assert any(source["key"] == "cnki" for source in sources)

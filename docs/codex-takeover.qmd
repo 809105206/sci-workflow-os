@@ -35,17 +35,24 @@ chmod +x SETUP-CODEX.sh
 
 ## Codex 如何立即理解项目
 
-接管链包含四层：
+接管链包含五层：
 
 1. `AGENTS.md` 在 Codex 开始工作前自动载入，规定启动顺序、证据边界、权限和完成门槛。
 2. `.agents/skills/run-sci-workflow/SKILL.md` 在检索、选题、研究设计、分析、写作、投稿或返修任务中触发。
 3. 活动研究项目的 `research-state.yaml` 保存研究方向、当前阶段、最后完成动作、决策、阻塞项和有序下一动作。
-4. `sciops codex resume --json` 将状态、环境和必要入口文件压缩为一次机器可读交接，不要求 Codex重新扫描整个仓库。
+4. `memory/` 保存受预算约束的工作状态、带来源语义条目和追加式事件；完整历史按需检索。
+5. `sciops codex resume --json` 编译 `context_bundle`、环境和必要入口文件，不要求 Codex 重新扫描整个仓库。
 
 Codex 启动后执行：
 
 ```bash
 uv run --frozen sciops codex resume --json
+```
+
+旧项目缺少记忆目录时先运行：
+
+```bash
+uv run --frozen sciops memory init workspace/my-study
 ```
 
 没有活动项目且用户已经说明方向时，Codex创建并激活一个研究工作区：
@@ -69,7 +76,7 @@ uv run sciops codex checkpoint \
 
 CodeGraph 在本机建立代码符号、调用和依赖图，并通过项目级 MCP 提供给 Codex。项目文件保存后由监听器增量更新；Codex重新连接时会补齐离线修改。索引位于未提交的 `.codegraph/`，不上传源码，也不进入 Release 包。
 
-CodeGraph 只负责代码结构。研究问题、文献决策、阶段状态和下一动作仍以 `research-state.yaml` 与阶段门为准。
+CodeGraph 只负责代码结构。研究问题、文献决策、阶段状态和下一动作仍以项目文件与阶段门为准；科研记忆只压缩和定位这些事实，不覆盖它们。
 
 受限环境、批处理或手动拉取更新后可以运行：
 

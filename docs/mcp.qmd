@@ -15,8 +15,11 @@ SCI Workflow OS 使用 [MCP 官方 Python SDK](https://github.com/modelcontextpr
 | `preview_chinese_candidates` | 检索、概念组过滤、相关性排序并返回题名/地址/摘要 | 是 | 否 |
 | `zotero_collections` | 列出已配置 Zotero collections | 是 | 否 |
 | `zotero_collection_records` | 读取并标准化 Zotero 顶层题录 | 是 | 否 |
+| `current_research_context` | 返回活动课题的受预算约束上下文 | 否 | 否 |
+| `research_memory_status` | 检查课题记忆结构、容量与完整性 | 否 | 否 |
+| `search_research_memory` | 按需回查长期条目与里程碑事件 | 否 | 否 |
 
-服务还提供 `sciops://chinese-literature/sources` 资源和通用中文检索计划 prompt。全部工具都标记为
+服务还提供 `sciops://chinese-literature/sources`、`sciops://research/context` 资源和通用中文检索计划 prompt。全部工具都标记为
 只读、幂等；MCP 不直接抓取知网、万方或维普。
 
 `preview_chinese_candidates` 适合让支持 MCP 的助手先显示候选，由研究者决定哪些值得下载。
@@ -65,8 +68,7 @@ uv run --frozen sciops-mcp
 
 ## 凭据
 
-服务从项目根目录未提交的 `.env` 或本机环境变量读取 OpenAlex/Zotero 凭据；配置文件只列变量名，
-不包含真实值。公开分享仓库时 `.env` 继续由 Git 和安全打包器排除。
+服务从本机环境变量、项目根目录未提交的 `.env` 或 `.sciops-credentials.local.json` 读取 OpenAlex/Zotero 凭据；配置文件只列变量名，不包含真实值。公开分享仓库时真实凭据文件继续由 Git 和安全打包器排除。参见[本机凭据 JSON](credentials.qmd)。
 
 ## 可分享与远程部署边界
 

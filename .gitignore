@@ -1,6 +1,8 @@
 .env
 .env.*
 !.env.example
+.sciops-credentials*.json
+!.sciops-credentials.example.json
 .venv/
 .tools/
 __pycache__/

@@ -2,11 +2,12 @@
 title: "Research Console 前端"
 ---
 
-Research Console 是 SCI Workflow OS 的浏览器工作台，面向研究者提供四个集中入口：
+Research Console 是 SCI Workflow OS 的浏览器工作台，面向研究者提供五个集中入口：
 
 公开入口：<https://809105206.github.io/sci-workflow-os/console/>。即时部署入口：<https://sci-workflow-console.z809105206.chatgpt.site>。
 
 - 研究总览展示 G0–G10 阶段、当前项目成熟度和本地活动。
+- 项目记忆展示当前目标、下一动作、工作集、有效决策、最近里程碑和上下文预算。
 - 文献雷达对中英文候选题名、期刊、DOI、摘要相关度和下载决策进行筛选。
 - 写作质检实时显示陈述句、对话式表达、元话语、空泛强化和占位符问题。
 - 图表工坊直接在浏览器本地读取 CSV，选择 X/Y 列与图形类型，并导出 SVG、PNG、CSV 和复现 YAML。
@@ -17,6 +18,6 @@ Research Console 是 SCI Workflow OS 的浏览器工作台，面向研究者提�
 ./scripts/start-console.sh
 ```
 
-Release 下载包根目录包含 `SCI-WORKFLOW-CONSOLE.html`。该文件已经内联应用代码与样式，Windows、macOS 和 Linux 均可直接双击运行，不依赖 Python 或本地服务。`OPEN-CONSOLE.cmd` 与 `OPEN-CONSOLE.sh` 会优先打开同一单文件应用，并在旧版下载包中回退到本地静态服务。
+Release 下载包根目录包含 `SCI-WORKFLOW-CONSOLE.html`。该文件已经内联应用代码与样式，Windows、macOS 和 Linux 均可直接双击运行，不依赖 Python 或本地服务。`OPEN-CONSOLE.cmd` 与 `OPEN-CONSOLE.sh` 在完整本地项目中优先启动动态本地服务，以载入活动项目和记忆；Release 单文件包则直接离线打开。
 
 单文件模式可以离线完成作图与写作规则检查。OpenAlex、Zotero 和授权数据库操作仍由本地 CLI/MCP 处理，浏览器包不嵌入 API 密钥。图表工坊只在内存中读取用户选择的 CSV，偏好设置保存在本机浏览器中。

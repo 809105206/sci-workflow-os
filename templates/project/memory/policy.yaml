@@ -1,0 +1,10 @@
+schema_version: 1
+limits:
+  context_chars: 12000
+  semantic_chars: 8000
+  recent_events: 8
+  event_chars: 6000
+retention:
+  raw_chat: false
+  credentials: false
+  superseded_decisions: true

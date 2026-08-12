@@ -1,0 +1,44 @@
+---
+title: "课题级科研记忆"
+---
+
+科研记忆用于让 Codex 在下一次会话中直接恢复“当前目标、活动阶段、下一动作和必要证据”，同时避免把整个聊天历史和全部项目文件重复塞入上下文。每个课题拥有独立记忆，项目文件仍是唯一事实源。
+
+## 四层结构
+
+| 文件 | 作用 | 默认载入 |
+| --- | --- | --- |
+| `memory/policy.yaml` | 字符预算、事件数量和保留规则 | 是 |
+| `memory/working-context.yaml` | 当前阶段、阻塞项、下一动作和工作集 | 是 |
+| `memory/semantic.yaml` | 精炼决策、带来源事实、约束和经验 | 仅有效条目 |
+| `memory/events.jsonl` | 追加式里程碑与交接轨迹 | 仅最近事件 |
+
+`sciops codex resume --json` 编译受预算约束的 `context_bundle`。历史条目不默认注入，可通过关键词按需回查。这一结构借鉴“短期工作状态、长期语义记忆、事件日志、按需检索”的分层思路，但不依赖外部记忆服务。
+
+## 使用
+
+```bash
+uv run --frozen sciops memory init workspace/my-paper
+uv run --frozen sciops memory context workspace/my-paper --json
+uv run --frozen sciops memory verify workspace/my-paper
+
+uv run --frozen sciops memory remember \
+  "主分析使用按井组划分的交叉拟合" \
+  --project workspace/my-paper --kind decision --stage G3 \
+  --source 03_analysis_plan.md
+
+uv run --frozen sciops memory search "交叉拟合" \
+  --project workspace/my-paper --json
+```
+
+事实标记为 `verified` 时必须附来源。决策发生变化时，新条目使用 `--supersedes M0001` 指向旧条目。旧记录保留为审计证据，但不会进入默认上下文。
+
+## 安全与完整性
+
+- 原始对话、API key、token、密码和提示指令不进入科研记忆。
+- 疑似凭据、提示注入文本和不可见双向控制字符会被拒绝。
+- 摘要级候选文献不能被记为支持正文结论的已核验事实。
+- `research-state.yaml`、`stage-gates.yaml`、数据、分析输出和稿件文件优先于记忆摘要。
+- 上下文超过字符预算时先移除较早事件，再移除较早语义条目，并记录裁剪状态。
+
+前端由本地启动器访问 `/api/resume`，显示当前阶段、工作集、有效记忆、最近事件和预算。直接双击离线 HTML 时，前端自动退化为不含本机项目状态的演示模式。

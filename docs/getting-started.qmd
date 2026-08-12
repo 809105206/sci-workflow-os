@@ -35,7 +35,9 @@ uv run sciops literature crossref-search "research question" \
   --output workspace/demo/literature/crossref.csv
 ```
 
-需要 OpenAlex 的引文网络与开放获取字段时使用 `literature search`。OpenAlex 自 2026-02-13 起要求 API key；复制 `.env.example` 为 `.env`，填写 `OPENALEX_API_KEY`。CLI 会从当前目录或其父目录自动加载该文件；`.env` 已被 Git 忽略，不要强制提交。
+需要 OpenAlex 的引文网络与开放获取字段时使用 `literature search`。OpenAlex 自 2026-02-13 起要求 API key；复制 `.env.example` 为 `.env`，填写 `OPENALEX_API_KEY`。CLI 会从当前目录或其父目录自动加载该文件；`.env` 已被 Git 忽略，不要强制提交。已配置完成后可运行 `sciops credentials export-env` 生成可迁移但仍只留本机的凭据 JSON，参见[本机凭据 JSON](credentials.qmd)。
+
+项目初始化后会生成独立科研记忆。旧项目可运行 `sciops memory init workspace/demo` 无损迁移，完整规则见[课题级科研记忆](memory.qmd)。
 
 去重：
 

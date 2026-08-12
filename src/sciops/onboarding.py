@@ -13,6 +13,14 @@ import yaml
 from sciops.audit import audit_project
 from sciops.constants import STAGE_ARTIFACTS
 from sciops.doctor import run_checks
+from sciops.memory import (
+    ResearchMemoryError,
+    compile_context,
+    infer_active_stage,
+    memory_health,
+    update_checkpoint_memory,
+    validate_memory_payload,
+)
 from sciops.project import repository_root
 
 
@@ -122,10 +130,8 @@ def _codegraph_binary() -> Path | None:
         root / ".tools/codegraph/node_modules/.bin/codegraph.cmd",
         root / ".tools/codegraph/node_modules/@colbymchenry/codegraph/bin/codegraph",
         root / ".tools/codegraph-standalone/v1.5.0/bin/codegraph",
-        root
-        / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-x64/bin/codegraph.cmd",
-        root
-        / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-arm64/bin/codegraph.cmd",
+        root / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-x64/bin/codegraph.cmd",
+        root / ".tools/codegraph-standalone/v1.5.0/codegraph-win32-arm64/bin/codegraph.cmd",
     )
     for candidate in candidates:
         if candidate.is_file():
@@ -166,9 +172,11 @@ def codegraph_status() -> dict[str, Any]:
     return result
 
 
-def build_resume_report(project: Path | None = None) -> dict[str, Any]:
+def build_resume_report(
+    project: Path | None = None, *, include_environment: bool = True
+) -> dict[str, Any]:
     selected, candidates = active_project(project)
-    checks = run_checks()
+    checks = run_checks() if include_environment else []
     environment = [
         {
             "name": check.name,
@@ -187,7 +195,7 @@ def build_resume_report(project: Path | None = None) -> dict[str, Any]:
         "missing_required": [
             item["name"] for item in environment if item["required"] and not item["ok"]
         ],
-        "codegraph": codegraph_status(),
+        "codegraph": codegraph_status() if include_environment else {"deferred": True},
     }
     if selected is None:
         report["status"] = "needs_project" if not candidates else "needs_project_selection"
@@ -201,16 +209,15 @@ def build_resume_report(project: Path | None = None) -> dict[str, Any]:
     state_path = selected / "research-state.yaml"
     state = _read_mapping(state_path)
     audit = audit_project(selected)
-    project_completed = audit.passed and bool(audit.stages) and all(
-        status == "passed" for status in audit.stages.values()
+    project_completed = (
+        audit.passed
+        and bool(audit.stages)
+        and all(status == "passed" for status in audit.stages.values())
     )
-    first_incomplete = next(
-        (stage for stage, status in audit.stages.items() if status != "passed"),
-        "G10",
+    active_stage = infer_active_stage(
+        audit.stages,
+        str(state.get("active_stage") or ""),
     )
-    active_stage = str(state.get("active_stage") or first_incomplete)
-    if audit.stages.get(active_stage) == "passed":
-        active_stage = first_incomplete
     entry_files = [str(item) for item in state.get("entry_files", []) if str(item).strip()]
     if not entry_files:
         entry_files = [
@@ -230,6 +237,20 @@ def build_resume_report(project: Path | None = None) -> dict[str, Any]:
         last_completed = (
             "Legacy project detected; persistent handoff state has not been recorded yet."
         )
+    memory = memory_health(selected)
+    context_bundle = None
+    if memory.get("ok"):
+        try:
+            context_bundle = compile_context(selected)
+            entry_files = [str(item) for item in context_bundle["read_priority"]]
+        except ResearchMemoryError as exc:
+            memory["ok"] = False
+            memory.setdefault("problems", []).append(str(exc))
+    elif not memory.get("available"):
+        next_actions = [
+            "Initialize project-scoped memory with `sciops memory init`.",
+            *next_actions,
+        ]
     report.update(
         {
             "status": (
@@ -246,8 +267,12 @@ def build_resume_report(project: Path | None = None) -> dict[str, Any]:
             "decisions": state.get("decisions", []),
             "blockers": state.get("blockers", []),
             "next_actions": next_actions,
-            "entry_files": [str(selected / item) for item in entry_files],
+            "entry_files": (
+                entry_files if context_bundle else [str(selected / item) for item in entry_files]
+            ),
             "audit": audit.as_dict(),
+            "memory": memory,
+            "context_bundle": context_bundle,
         }
     )
     return report
@@ -265,6 +290,19 @@ def checkpoint_project(
     selected, _ = active_project(project)
     if selected is None:
         raise OnboardingError("没有活动研究项目")
+    try:
+        validate_memory_payload(
+            {
+                "completed": completed,
+                "stage": stage or "",
+                "next_actions": next_actions or [],
+                "decisions": decisions or [],
+                "blockers": blockers or [],
+            },
+            label="checkpoint",
+        )
+    except ResearchMemoryError as exc:
+        raise OnboardingError(str(exc)) from exc
     state_path = selected / "research-state.yaml"
     state = _read_mapping(state_path)
     state["schema_version"] = 1
@@ -283,4 +321,14 @@ def checkpoint_project(
         yaml.safe_dump(state, allow_unicode=True, sort_keys=False),
         encoding="utf-8",
     )
+    try:
+        update_checkpoint_memory(
+            selected,
+            completed=completed,
+            stage=str(state.get("active_stage") or ""),
+            next_actions=[str(item) for item in state.get("next_actions", [])],
+            decisions=decisions or [],
+        )
+    except ResearchMemoryError as exc:
+        raise OnboardingError(f"交接状态已写入，但科研记忆更新失败: {exc}") from exc
     return state_path

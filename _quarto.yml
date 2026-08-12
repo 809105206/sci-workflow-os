@@ -30,6 +30,10 @@ website:
         text: 前端
       - href: docs/codex-takeover.qmd
         text: Codex 接管
+      - href: docs/memory.qmd
+        text: 科研记忆
+      - href: docs/credentials.qmd
+        text: 本机凭据
       - href: docs/writing-quality.qmd
         text: 写作质检
       - href: docs/figures.qmd
@@ -53,6 +57,8 @@ website:
           - docs/mcp.qmd
           - docs/research-console.qmd
           - docs/codex-takeover.qmd
+          - docs/memory.qmd
+          - docs/credentials.qmd
           - docs/writing-quality.qmd
           - docs/figures.qmd
           - docs/architecture.qmd

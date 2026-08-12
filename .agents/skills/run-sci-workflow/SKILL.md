@@ -8,7 +8,7 @@ description: Run or resume an end-to-end scholarly research project in SCI Workf
 ## Resume before acting
 
 1. Run `uv run --frozen sciops codex resume --json` from the repository root.
-2. Use the reported active project and current stage. Read only `entry_files` plus files needed for the immediate action.
+2. Use `context_bundle` as the bounded working context. Read only its `read_priority` files plus files required by the immediate action. If memory is unavailable, run `sciops memory init <project>` and resume again.
 3. If the user explicitly requests a new paper, project, or unrelated direction, create a separate workspace after intake even when another project is active. Never overwrite or silently repurpose an existing project.
 4. If the active project is complete through G10, preserve it as an archive and ask for the next broad research direction before creating a separate workspace.
 5. If no active project exists and the user supplied a research direction, create `workspace/<short-slug>` with `sciops init`, activate it, record the direction in `00_research_intake.md` and `research-state.yaml`, and continue G0.
@@ -21,6 +21,15 @@ description: Run or resume an end-to-end scholarly research project in SCI Workf
 2. In `trusted` mode, install missing project-local dependencies and initialize or sync CodeGraph without another question.
 3. In `guided` mode, explain the smallest required installation and request approval when it changes the machine.
 4. Never place credentials in tracked files. Ask for a missing credential only when the next action truly requires it; prefer keyless sources when suitable.
+
+## Maintain project memory
+
+1. Treat versioned project files as authoritative; memory accelerates retrieval but cannot override evidence or stage gates.
+2. Store only compact decisions, source-backed facts, constraints, and reusable lessons with `sciops memory remember`.
+3. Mark facts `verified` only when a source is recorded. Keep unverified claims in research artifacts, not durable memory.
+4. Supersede outdated decisions with `--supersedes <ID>` so the audit trail remains intact.
+5. Use `sciops memory search` for old milestones or inactive entries instead of loading the full history.
+6. Never store raw chat, prompt instructions, credentials, tokens, or confidential source content in project memory.
 
 ## Execute the active gate
 

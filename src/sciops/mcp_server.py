@@ -1,31 +1,79 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
-from dotenv import find_dotenv, load_dotenv
 from mcp.server import MCPServer
 from mcp.types import ToolAnnotations
 
 from sciops.chinese_sources import list_chinese_literature_sources
+from sciops.credentials import load_runtime_credentials
 from sciops.literature import (
     get_zotero_records,
     list_zotero_collections,
     prepare_candidate_previews,
     search_chinese_openalex,
 )
+from sciops.memory import compile_context, memory_health, search_memory
+from sciops.onboarding import OnboardingError, active_project
 
-dotenv_path = find_dotenv(usecwd=True)
-if dotenv_path:
-    load_dotenv(dotenv_path)
+load_runtime_credentials()
 
 INSTRUCTIONS = (
-    "Use this server for reusable Chinese-language scholarly discovery and citation metadata. "
+    "Use this server for project-scoped research context and reusable Chinese-language "
+    "scholarly discovery and citation metadata. "
     "OpenAlex tools are automated; CNKI, Wanfang, CQVIP and other licensed databases must be "
     "searched through the user's authorized access and imported through Zotero. Never claim a "
     "candidate record was read or supports a conclusion until the original text is verified."
 )
 
 mcp = MCPServer("SCI Workflow OS", instructions=INSTRUCTIONS)
+
+
+def _selected_project() -> Path:
+    selected, _ = active_project()
+    if selected is None:
+        raise OnboardingError("没有活动研究项目；先运行 sciops codex activate")
+    return selected
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False,
+    )
+)
+def current_research_context() -> dict[str, object]:
+    """Return the bounded current-stage context for the active research project."""
+    return compile_context(_selected_project())
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False,
+    )
+)
+def research_memory_status() -> dict[str, object]:
+    """Check active-project memory availability, integrity and capacity without exposing secrets."""
+    return memory_health(_selected_project())
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False,
+    )
+)
+def search_research_memory(query: str, limit: int = 20) -> list[dict[str, object]]:
+    """Search all decisions and milestone events on demand without enlarging core context."""
+    return search_memory(_selected_project(), query, limit=limit)
 
 
 @mcp.tool(
@@ -141,6 +189,12 @@ def zotero_collection_records(
 def chinese_sources_resource() -> str:
     """Machine-readable registry of Chinese scholarly search sources."""
     return json.dumps(list_chinese_literature_sources(), ensure_ascii=False, indent=2)
+
+
+@mcp.resource("sciops://research/context")
+def research_context_resource() -> str:
+    """Machine-readable bounded context for the active research project."""
+    return json.dumps(current_research_context(), ensure_ascii=False, indent=2)
 
 
 @mcp.prompt()

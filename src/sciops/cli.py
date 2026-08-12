@@ -5,12 +5,18 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from dotenv import find_dotenv, load_dotenv
 from rich.console import Console
 from rich.table import Table
 
 from sciops.audit import audit_project
 from sciops.chinese_sources import list_chinese_literature_sources
+from sciops.credentials import (
+    CredentialError,
+    credential_status,
+    export_dotenv_to_json,
+    import_credentials,
+    load_runtime_credentials,
+)
 from sciops.data import DataValidationError, validate_csv
 from sciops.doctor import run_checks
 from sciops.figures import FigureError, available_backends, load_figure_spec, render_figure
@@ -28,6 +34,14 @@ from sciops.literature import (
     search_openalex,
     write_records,
 )
+from sciops.memory import (
+    ResearchMemoryError,
+    compile_context,
+    ensure_project_memory,
+    memory_health,
+    remember,
+    search_memory,
+)
 from sciops.onboarding import (
     OnboardingError,
     activate_project,
@@ -38,9 +52,7 @@ from sciops.onboarding import (
 from sciops.project import initialize_project, package_project
 from sciops.writing import lint_manuscript
 
-dotenv_path = find_dotenv(usecwd=True)
-if dotenv_path:
-    load_dotenv(dotenv_path)
+load_runtime_credentials()
 
 app = typer.Typer(no_args_is_help=True, help="SCI Workflow OS: G0-G10 可执行科研工作流")
 literature_app = typer.Typer(no_args_is_help=True, help="联网文献检索、去重和引用")
@@ -49,13 +61,171 @@ data_app = typer.Typer(no_args_is_help=True, help="研究数据质量检查")
 writing_app = typer.Typer(no_args_is_help=True, help="陈述句、证据与相关性写作质量门")
 figure_app = typer.Typer(no_args_is_help=True, help="OriginPro 与开放后端科研图表")
 codex_app = typer.Typer(no_args_is_help=True, help="Codex 项目接管、恢复与交接")
+credentials_app = typer.Typer(no_args_is_help=True, help="本机凭据 JSON 导入、导出与状态")
+memory_app = typer.Typer(no_args_is_help=True, help="课题隔离的科研记忆与最小上下文")
 app.add_typer(literature_app, name="literature")
 app.add_typer(zotero_app, name="zotero")
 app.add_typer(data_app, name="data")
 app.add_typer(writing_app, name="writing")
 app.add_typer(figure_app, name="figure")
 app.add_typer(codex_app, name="codex")
+app.add_typer(credentials_app, name="credentials")
+app.add_typer(memory_app, name="memory")
 console = Console()
+
+
+@memory_app.command("init")
+def memory_init(
+    project: Annotated[Path, typer.Argument(help="研究项目目录")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON")] = False,
+) -> None:
+    """初始化或无损迁移课题级科研记忆。"""
+    try:
+        paths = ensure_project_memory(project)
+        result = {"created": True, "paths": paths, "health": memory_health(project)}
+    except ResearchMemoryError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    if json_output:
+        console.print_json(json.dumps(result, ensure_ascii=False))
+    else:
+        console.print(f"[green]科研记忆已就绪[/green] {project.expanduser().resolve() / 'memory'}")
+
+
+@memory_app.command("context")
+def memory_context(
+    project: Annotated[Path, typer.Argument(help="研究项目目录")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON")] = False,
+) -> None:
+    """编译有字符预算的最小接管上下文。"""
+    try:
+        context = compile_context(project)
+    except ResearchMemoryError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    if json_output:
+        console.print_json(json.dumps(context, ensure_ascii=False))
+    else:
+        console.print(f"[bold]当前阶段[/bold] {context['active_stage']}")
+        console.print(f"[cyan]NEXT[/cyan] {context['next_action']}")
+        console.print(
+            f"上下文预算 {context['budget']['used_chars']} / "
+            f"{context['budget']['limit_chars']} 字符"
+        )
+
+
+@memory_app.command("verify")
+def memory_verify(
+    project: Annotated[Path, typer.Argument(help="研究项目目录")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON")] = False,
+) -> None:
+    """校验科研记忆结构、容量和事件日志。"""
+    result = memory_health(project)
+    if json_output:
+        console.print_json(json.dumps(result, ensure_ascii=False))
+    else:
+        console.print("[green]PASS[/green]" if result.get("ok") else "[red]FAIL[/red]")
+        for problem in result.get("problems", []):
+            console.print(f"[red]{problem}[/red]")
+    if not result.get("ok"):
+        raise typer.Exit(1)
+
+
+@memory_app.command("remember")
+def memory_remember(
+    statement: Annotated[str, typer.Argument(help="需长期保留的精炼内容")],
+    kind: Annotated[str, typer.Option(help="decision、fact、constraint 或 lesson")] = "decision",
+    project: Annotated[Path, typer.Option("--project", help="研究项目目录")] = Path("."),
+    status: Annotated[str | None, typer.Option(help="状态；事实默认按来源判定")] = None,
+    scope: Annotated[str, typer.Option(help="作用域")] = "project",
+    stage: Annotated[str, typer.Option(help="相关阶段，如 G3")] = "",
+    rationale: Annotated[str, typer.Option(help="理由或解释")] = "",
+    source: Annotated[
+        list[str] | None, typer.Option(help="来源文件、DOI 或正规地址；可重复")
+    ] = None,
+    supersedes: Annotated[str, typer.Option(help="被本条替代的记忆 ID")] = "",
+    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON")] = False,
+) -> None:
+    """保存带来源和替代关系的决策、事实、约束或经验。"""
+    try:
+        item = remember(
+            project,
+            statement,
+            kind=kind,
+            status=status,
+            scope=scope,
+            stage=stage,
+            rationale=rationale,
+            sources=source,
+            supersedes=supersedes,
+        )
+    except ResearchMemoryError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    if json_output:
+        console.print_json(json.dumps({"created": True, "item": item}, ensure_ascii=False))
+    else:
+        console.print(f"[green]已保存[/green] {item['id']}")
+
+
+@memory_app.command("search")
+def memory_search(
+    query: Annotated[str, typer.Argument(help="需回查的决策、事实、动作或关键词")],
+    project: Annotated[Path, typer.Option("--project", help="研究项目目录")] = Path("."),
+    limit: Annotated[int, typer.Option(min=1, max=100)] = 20,
+    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON")] = False,
+) -> None:
+    """按需检索全部长期条目和里程碑事件，不扩大默认上下文。"""
+    try:
+        records = search_memory(project, query, limit=limit)
+    except ResearchMemoryError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    if json_output:
+        console.print_json(json.dumps(records, ensure_ascii=False))
+    else:
+        for record in records:
+            console.print(
+                f"[cyan]{record.get('id')}[/cyan] {record.get('statement') or record.get('action')}"
+            )
+
+
+@credentials_app.command("status")
+def credentials_status() -> None:
+    """显示凭据字段状态，不输出任何值。"""
+    status = credential_status()
+    console.print(f"[bold]本机文件[/bold] {status['path']}")
+    for name in status["configured"]:
+        console.print(f"[green]CONFIGURED[/green] {name}")
+    for name in status["missing"]:
+        console.print(f"[yellow]MISSING[/yellow] {name}")
+
+
+@credentials_app.command("export-env")
+def credentials_export_env(
+    source: Annotated[Path | None, typer.Option("--source", help="来源 .env")] = None,
+) -> None:
+    """把现有 .env 安全转换为本机 JSON；不打印字段值。"""
+    try:
+        target = export_dotenv_to_json(source=source)
+    except CredentialError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]已保存本机凭据[/green] {target}")
+    console.print("文件权限已设为仅当前用户读写；Git 和研究 ZIP 均排除该文件。")
+
+
+@credentials_app.command("import-json")
+def credentials_import_json(
+    source: Annotated[Path, typer.Argument(help="待导入的凭据 JSON")],
+) -> None:
+    """验证并导入凭据 JSON，供后续命令自动加载。"""
+    try:
+        target = import_credentials(source)
+    except CredentialError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]已导入本机凭据[/green] {target}")
 
 
 @codex_app.command("resume")
@@ -249,9 +419,7 @@ def writing_lint(
                 issue.message,
             )
         console.print(table)
-        console.print(
-            f"规范分 {result.score}；{result.errors} errors；{result.warnings} warnings"
-        )
+        console.print(f"规范分 {result.score}；{result.errors} errors；{result.warnings} warnings")
         console.print("[green]PASS[/green]" if result.passed else "[red]FAIL[/red]")
     if not result.passed:
         raise typer.Exit(1)
@@ -334,9 +502,7 @@ def literature_search_cn(
     limit: Annotated[int, typer.Option("--limit", "-n", min=1, max=10_000)] = 50,
     from_year: Annotated[int | None, typer.Option("--from-year", min=1000, max=2100)] = None,
     to_year: Annotated[int | None, typer.Option("--to-year", min=1000, max=2100)] = None,
-    output: Annotated[Path, typer.Option("--output", "-o")] = Path(
-        "literature/openalex-zh.csv"
-    ),
+    output: Annotated[Path, typer.Option("--output", "-o")] = Path("literature/openalex-zh.csv"),
 ) -> None:
     """通过 OpenAlex 的中文语言过滤检索题录并导出标准 CSV。"""
     try:
@@ -430,9 +596,7 @@ def literature_chinese_sources(
 def literature_crossref_search(
     query: Annotated[str, typer.Argument(help="Crossref 检索式")],
     limit: Annotated[int, typer.Option("--limit", "-n", min=1, max=1_000)] = 50,
-    output: Annotated[Path, typer.Option("--output", "-o")] = Path(
-        "literature/crossref.csv"
-    ),
+    output: Annotated[Path, typer.Option("--output", "-o")] = Path("literature/crossref.csv"),
 ) -> None:
     """无需 API key，通过 Crossref 联网检索题录并导出 CSV。"""
     try:
@@ -546,9 +710,7 @@ def zotero_export_csv(
 
 @zotero_app.command("export-csl")
 def zotero_export_csl(
-    output: Annotated[Path, typer.Option("--output", "-o")] = Path(
-        "manuscript/references.json"
-    ),
+    output: Annotated[Path, typer.Option("--output", "-o")] = Path("manuscript/references.json"),
     collection: Annotated[str | None, typer.Option(help="可选 Zotero collection key")] = None,
 ) -> None:
     """导出 Zotero 顶层题录为 Quarto/Pandoc 可直接引用的 CSL JSON。"""

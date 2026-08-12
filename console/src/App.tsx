@@ -1,31 +1,65 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import FigureStudio from "./FigureStudio";
 
-type View = "overview" | "literature" | "writing" | "figures";
+type View = "overview" | "memory" | "literature" | "writing" | "figures";
 type Decision = "待判断" | "纳入" | "排除";
 type StageState = "done" | "active" | "next";
 
+type ResumeReport = {
+  status: string;
+  active_project: string | null;
+  active_stage?: string;
+  research_direction?: string;
+  last_completed_action?: string;
+  next_actions?: string[];
+  blockers?: string[];
+  audit?: { stages?: Record<string, string> };
+  memory?: {
+    available?: boolean;
+    ok?: boolean;
+    active_semantic_items?: number;
+    semantic_chars?: number;
+    semantic_char_limit?: number;
+    events?: number;
+    context_budget_chars?: number;
+    problems?: string[];
+  };
+  context_bundle?: {
+    objective?: string;
+    active_stage?: string;
+    stage_status?: string;
+    next_action?: string;
+    blockers?: string[];
+    last_completed_action?: string;
+    working_set?: { files?: string[] };
+    semantic_memory?: Array<{ id?: string; kind?: string; statement?: string; status?: string }>;
+    recent_events?: Array<{ id?: string; timestamp?: string; action?: string; stage?: string }>;
+    budget?: { used_chars?: number; limit_chars?: number; truncated?: boolean };
+  } | null;
+};
+
 const navItems: Array<{ id: View; label: string; mark: string }> = [
   { id: "overview", label: "研究总览", mark: "⌂" },
+  { id: "memory", label: "项目记忆", mark: "◎" },
   { id: "literature", label: "文献雷达", mark: "⌕" },
   { id: "writing", label: "写作质检", mark: "✓" },
   { id: "figures", label: "图表工坊", mark: "◇" },
 ];
 
-const stages: ReadonlyArray<{ id: string; title: string; detail: string; state: StageState }> = [
-  { id: "G0", title: "方向与章程", detail: "等待输入新课题方向、资源和边界", state: "active" },
-  { id: "G1", title: "选题筛选", detail: "候选问题评分与 Go / Pivot / Stop", state: "next" },
-  { id: "G2", title: "文献与缺口", detail: "中英文检索、证据地图与最近邻分析", state: "next" },
-  { id: "G3", title: "研究设计", detail: "目标、变量、对照、统计与识别条件", state: "next" },
-  { id: "G4", title: "数据就绪", detail: "来源、质量、许可、切分与泄漏控制", state: "next" },
-  { id: "G5", title: "核心结果", detail: "主实验、强基线、效应量与不确定性", state: "next" },
-  { id: "G6", title: "证据加固", detail: "消融、稳健性、误差与外部验证", state: "next" },
-  { id: "G7", title: "双语成稿", detail: "中英全文、大纲、论证链与对齐记录", state: "next" },
-  { id: "G8", title: "选刊投稿", detail: "期刊适配、格式、伦理与投稿包", state: "next" },
-  { id: "G9", title: "同行评审", detail: "意见矩阵、证据补强与版本记录", state: "next" },
-  { id: "G10", title: "发表归档", detail: "校样、数据代码归档与成果传播", state: "next" },
+const baseStages: ReadonlyArray<{ id: string; title: string; detail: string }> = [
+  { id: "G0", title: "方向与章程", detail: "等待输入新课题方向、资源和边界" },
+  { id: "G1", title: "选题筛选", detail: "候选问题评分与 Go / Pivot / Stop" },
+  { id: "G2", title: "文献与缺口", detail: "中英文检索、证据地图与最近邻分析" },
+  { id: "G3", title: "研究设计", detail: "目标、变量、对照、统计与识别条件" },
+  { id: "G4", title: "数据就绪", detail: "来源、质量、许可、切分与泄漏控制" },
+  { id: "G5", title: "核心结果", detail: "主实验、强基线、效应量与不确定性" },
+  { id: "G6", title: "证据加固", detail: "消融、稳健性、误差与外部验证" },
+  { id: "G7", title: "双语成稿", detail: "中英全文、大纲、论证链与对齐记录" },
+  { id: "G8", title: "选刊投稿", detail: "期刊适配、格式、伦理与投稿包" },
+  { id: "G9", title: "同行评审", detail: "意见矩阵、证据补强与版本记录" },
+  { id: "G10", title: "发表归档", detail: "校样、数据代码归档与成果传播" },
 ];
 
 const papers = [
@@ -68,6 +102,39 @@ export default function App() {
   const [decisions, setDecisions] = useState<Record<number, Decision>>({});
   const [draft, setDraft] = useState(initialDraft);
   const [notice, setNotice] = useState("本地工作流已就绪");
+  const [report, setReport] = useState<ResumeReport | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/resume", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("resume unavailable");
+        return response.json() as Promise<ResumeReport>;
+      })
+      .then((value) => {
+        if (active) {
+          setReport(value);
+          setNotice(value.active_project ? "活动项目与科研记忆已载入" : "等待建立研究项目");
+        }
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
+  const activeStage = report?.active_stage ?? "G0";
+  const context = report?.context_bundle;
+  const stageStatuses = report?.audit?.stages ?? {};
+  const stages = baseStages.map((stage) => ({
+    ...stage,
+    state: (stageStatuses[stage.id] === "passed"
+      ? "done"
+      : stage.id === activeStage
+        ? "active"
+        : "next") as StageState,
+  }));
+  const projectName = report?.active_project?.split(/[\\/]/).filter(Boolean).at(-1) ?? "尚未载入研究项目";
+  const completedStages = Object.values(stageStatuses).filter((status) => status === "passed").length;
+  const maturity = Math.round((completedStages / baseStages.length) * 100);
 
   const filteredPapers = useMemo(() => papers.filter((paper) => {
     const matchesQuery = `${paper.title} ${paper.source} ${paper.doi}`.toLowerCase().includes(query.toLowerCase());
@@ -77,6 +144,52 @@ export default function App() {
   const lint = useMemo(() => lintDraft(draft), [draft]);
 
   const renderView = () => {
+    if (view === "memory") {
+      const memory = report?.memory;
+      const semanticItems = context?.semantic_memory ?? [];
+      const events = context?.recent_events ?? [];
+      const memoryReady = Boolean(memory?.ok && context);
+      return (
+        <section className="view-shell">
+          <div className="view-heading">
+            <div><p className="eyebrow">Bounded research context</p><h1>项目记忆</h1><p>仅载入当前阶段、有效决策和最近里程碑；完整记录按需检索，项目文件始终是事实源。</p></div>
+            <span className={`memory-badge ${memoryReady ? "ready" : "waiting"}`}><i />{memoryReady ? "上下文已校验" : "等待项目记忆"}</span>
+          </div>
+          <div className="metric-grid memory-metrics">
+            <article className="metric-card focus"><span>活动阶段</span><strong>{context?.active_stage ?? activeStage}</strong><p>{context?.stage_status ?? "pending"}</p><i>LIVE</i></article>
+            <article className="metric-card"><span>有效记忆</span><strong>{memory?.active_semantic_items ?? 0}</strong><p>决策 · 事实 · 约束 · 经验</p><i>{memory?.ok ? "PASS" : "—"}</i></article>
+            <article className="metric-card"><span>里程碑事件</span><strong>{memory?.events ?? 0}</strong><p>追加式审计轨迹</p><i>JSONL</i></article>
+            <article className="metric-card"><span>上下文预算</span><strong>{context?.budget?.used_chars ?? 0}</strong><p>上限 {context?.budget?.limit_chars ?? memory?.context_budget_chars ?? 12000} 字符</p><i className="healthy">{context?.budget?.truncated ? "已裁剪" : "受控"}</i></article>
+          </div>
+          <div className="memory-grid">
+            <div className="panel context-card">
+              <div className="panel-title"><span>当前任务切片</span><small>{projectName}</small></div>
+              <dl>
+                <div><dt>研究目标</dt><dd>{context?.objective || report?.research_direction || "建立项目后自动载入"}</dd></div>
+                <div><dt>上一动作</dt><dd>{context?.last_completed_action || report?.last_completed_action || "尚无交接记录"}</dd></div>
+                <div className="next-action"><dt>NEXT</dt><dd>{context?.next_action || report?.next_actions?.[0] || "先输入研究方向与可用资源"}</dd></div>
+                <div><dt>阻塞项</dt><dd>{(context?.blockers ?? report?.blockers ?? []).join("；") || "无"}</dd></div>
+              </dl>
+            </div>
+            <div className="panel working-card">
+              <div className="panel-title"><span>优先读取文件</span><small>按需进入正文</small></div>
+              <div className="file-list">{(context?.working_set?.files ?? []).length ? context?.working_set?.files?.map((file) => <code key={file}>{file}</code>) : <p>初始化项目记忆后显示工作集。</p>}</div>
+            </div>
+          </div>
+          <div className="memory-grid lower">
+            <div className="panel memory-list">
+              <div className="panel-title"><span>有效语义记忆</span><small>过期决策保留但不注入</small></div>
+              {semanticItems.length ? semanticItems.map((item) => <article key={item.id}><b>{item.id}</b><div><strong>{item.statement}</strong><p>{item.kind} · {item.status}</p></div></article>) : <div className="memory-empty">当前没有长期条目。</div>}
+            </div>
+            <div className="panel memory-list">
+              <div className="panel-title"><span>最近里程碑</span><small>完整历史可检索</small></div>
+              {events.length ? events.map((event) => <article key={event.id}><b>{event.stage || "·"}</b><div><strong>{event.action}</strong><p>{event.id} · {event.timestamp}</p></div></article>) : <div className="memory-empty">当前没有事件记录。</div>}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     if (view === "literature") {
       return (
         <section className="view-shell">
@@ -153,20 +266,20 @@ export default function App() {
 
     return (
       <section className="view-shell">
-        <div className="view-heading"><div><p className="eyebrow">Research operating system</p><h1>研究总览</h1><p>每个新项目从独立方向输入开始，再进入选题、证据、实验、双语成稿与发表归档。</p></div><button className="primary-button" onClick={() => setNotice("请先向 Codex 说明研究方向与已有数据或资源")}>开始 G0 方向输入</button></div>
+        <div className="view-heading"><div><p className="eyebrow">Research operating system</p><h1>研究总览</h1><p>每个新项目从独立方向输入开始，再进入选题、证据、实验、双语成稿与发表归档。</p></div><button className="primary-button" onClick={() => setNotice(report?.active_project ? `下一动作：${context?.next_action ?? report.next_actions?.[0] ?? `核验 ${activeStage}`}` : "请先向 Codex 说明研究方向与已有数据或资源")}>{report?.active_project ? "继续当前项目" : "开始 G0 方向输入"}</button></div>
         <div className="metric-grid">
-          <article className="metric-card focus"><span>当前阶段</span><strong>G0</strong><p>等待新项目方向</p><i>→</i></article>
+          <article className="metric-card focus"><span>当前阶段</span><strong>{activeStage}</strong><p>{context?.next_action ?? "等待新项目方向"}</p><i>→</i></article>
           <article className="metric-card"><span>文献库</span><strong>0</strong><p>方向确认后建立独立候选池</p><i>—</i></article>
-          <article className="metric-card"><span>质量规则</span><strong>24</strong><p>陈述句 · 证据 · 相关性</p><i>100%</i></article>
+          <article className="metric-card"><span>科研记忆</span><strong>{report?.memory?.active_semantic_items ?? 0}</strong><p>受预算约束 · 可审计</p><i>{report?.memory?.ok ? "PASS" : "—"}</i></article>
           <article className="metric-card"><span>双语交付</span><strong>5</strong><p>中英全文 · 大纲 · 论证链 · 对齐</p><i className="healthy">强制</i></article>
         </div>
         <div className="overview-grid">
           <div className="panel pipeline-panel">
-            <div className="panel-title"><span>G0–G10 研究流程</span><small>等待方向输入</small></div>
+            <div className="panel-title"><span>G0–G10 研究流程</span><small>{report?.active_project ? `${activeStage} 进行中` : "等待方向输入"}</small></div>
             <div className="pipeline-list">{stages.map((stage) => <button key={stage.id} onClick={() => setNotice(`${stage.id} · ${stage.title}`)}><span className={`stage-mark ${stage.state}`}>{stage.state === "done" ? "✓" : stage.id.replace("G", "")}</span><div><strong>{stage.id} · {stage.title}</strong><p>{stage.detail}</p></div><StatusPill state={stage.state} /></button>)}</div>
           </div>
           <aside className="overview-aside">
-            <div className="panel project-card"><p className="eyebrow">Active project</p><h2>尚未载入研究项目</h2><p>向 Codex 说明宽泛方向即可建立全新的候选选题、证据池和研究工作区。</p><div className="tag-row"><span>方向独立</span><span>G0–G10</span><span>中英双稿</span></div><div className="progress"><span><b>项目成熟度</b><em>0%</em></span><i><b style={{ width: "0%" }} /></i></div></div>
+            <div className="panel project-card"><p className="eyebrow">Active project</p><h2>{projectName}</h2><p>{context?.objective ?? report?.research_direction ?? "向 Codex 说明宽泛方向即可建立全新的候选选题、证据池和研究工作区。"}</p><div className="tag-row"><span>方向独立</span><span>{activeStage}</span><span>中英双稿</span></div><div className="progress"><span><b>项目成熟度</b><em>{maturity}%</em></span><i><b style={{ width: `${maturity}%` }} /></i></div></div>
             <div className="panel activity-card"><div className="panel-title"><span>方法论能力</span><small>通用模板</small></div>{[{c:"teal",t:"新项目独立建档",d:"不继承上一课题内容",time:"G0"},{c:"gold",t:"双语证据对齐",d:"数字、图表、引文与边界一致",time:"G7"},{c:"blue",t:"论证链审计",d:"论点、实验、作用与意义闭环",time:"G6–G7"}].map((item) => <article key={item.t}><i className={item.c}/><div><strong>{item.t}</strong><p>{item.d}</p></div><time>{item.time}</time></article>)}</div>
           </aside>
         </div>
@@ -179,7 +292,7 @@ export default function App() {
       <aside className="sidebar">
         <div className="brand"><span>Σ</span><div><strong>SCI Workflow</strong><small>Research OS</small></div></div>
         <nav>{navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><span>{item.mark}</span>{item.label}{item.id === "writing" && lint.errors > 0 ? <b>{lint.errors}</b> : null}</button>)}</nav>
-        <div className="sidebar-block"><span>工作空间</span><strong>NEW-STUDY</strong><small>方向独立 · 本地优先</small></div>
+        <div className="sidebar-block"><span>工作空间</span><strong>{projectName}</strong><small>{activeStage} · 本地优先</small></div>
         <div className="sidebar-footer"><span className="avatar">研</span><div><strong>研究者</strong><small>项目所有者</small></div><button aria-label="更多设置">•••</button></div>
       </aside>
       <div className="main-column">

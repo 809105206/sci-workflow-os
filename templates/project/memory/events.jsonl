@@ -1,0 +1,1 @@
+{"id":"E000001","timestamp":"{{DATE}}T00:00:00+00:00","type":"project_initialized","stage":"G0","action":"Research project workspace initialized.","artifacts":["research-state.yaml","stage-gates.yaml","memory/working-context.yaml"],"next_actions":["Complete the research-direction intake and candidate-topic screening."]}

@@ -5,6 +5,11 @@ from pathlib import Path
 STAGES = tuple(f"G{i}" for i in range(11))
 
 REQUIRED_PATHS = (
+    Path("research-state.yaml"),
+    Path("memory/policy.yaml"),
+    Path("memory/working-context.yaml"),
+    Path("memory/semantic.yaml"),
+    Path("memory/events.jsonl"),
     Path("00_research_intake.md"),
     Path("01_project_charter.md"),
     Path("02_search_log.csv"),
@@ -60,6 +65,7 @@ SENSITIVE_NAMES = {
     ".env",
     ".sciops-active",
     ".sciops-local.toml",
+    ".sciops-credentials.local.json",
     "credentials.json",
     "secrets.json",
     "token.json",

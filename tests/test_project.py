@@ -36,6 +36,10 @@ def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
     (source / ".codegraph").mkdir(parents=True)
     (source / "notes.md").write_text("public", encoding="utf-8")
     (source / ".env").write_text("TOKEN=secret", encoding="utf-8")
+    (source / ".sciops-credentials.local.json").write_text(
+        '{"schema_version":1,"credentials":{"ZOTERO_API_KEY":"secret"}}',
+        encoding="utf-8",
+    )
     (source / ".sciops-active").write_text("workspace/private-study", encoding="utf-8")
     (source / ".sciops-local.toml").write_text('mode = "trusted"', encoding="utf-8")
     (source / ".codegraph/index.db").write_text("generated", encoding="utf-8")
@@ -53,6 +57,7 @@ def test_package_excludes_secrets_and_raw_data(tmp_path: Path) -> None:
     assert "notes.md" in names
     assert "MANIFEST.sha256" in names
     assert ".env" not in names
+    assert ".sciops-credentials.local.json" not in names
     assert ".sciops-active" not in names
     assert ".sciops-local.toml" not in names
     assert ".codegraph/index.db" not in names
