@@ -29,11 +29,12 @@ Write-Host "Installing the isolated SCI Workflow OS environment..."
 & uv sync --extra data --extra figures --group dev
 if ($LASTEXITCODE -ne 0) { throw "Project dependency installation failed." }
 
+$CodeGraphVersion = "1.6.0"
 $CodeGraph = $null
 $Npm = Get-Command npm -ErrorAction SilentlyContinue
 if ($null -ne $Npm) {
-    Write-Host "Installing project-local CodeGraph 1.5.0..."
-    & npm install --prefix .tools/codegraph --no-save @colbymchenry/codegraph@1.5.0
+    Write-Host "Installing project-local CodeGraph $CodeGraphVersion..."
+    & npm install --prefix .tools/codegraph --no-save "@colbymchenry/codegraph@$CodeGraphVersion"
     if ($LASTEXITCODE -ne 0) { throw "CodeGraph installation failed." }
     $CodeGraph = Join-Path $ProjectDir ".tools\codegraph\node_modules\.bin\codegraph.cmd"
 }
