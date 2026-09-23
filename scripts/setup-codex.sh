@@ -21,18 +21,19 @@ fi
 echo "Installing the isolated SCI Workflow OS environment..."
 uv sync --extra data --extra figures --group dev
 
+codegraph_version="1.6.0"
 codegraph_cmd=""
 if command -v npm >/dev/null 2>&1; then
-  echo "Installing project-local CodeGraph 1.5.0..."
+  echo "Installing project-local CodeGraph ${codegraph_version}..."
   npm install --prefix .tools/codegraph --no-save --cache /tmp/sciops-npm-cache \
-    @colbymchenry/codegraph@1.5.0
+    "@colbymchenry/codegraph@${codegraph_version}"
   codegraph_cmd="$project_dir/.tools/codegraph/node_modules/.bin/codegraph"
 elif command -v codegraph >/dev/null 2>&1; then
   codegraph_cmd="$(command -v codegraph)"
 elif [[ "$trusted" == true ]]; then
   echo "Installing the pinned standalone CodeGraph build in this project..."
   bash scripts/install-codegraph.sh
-  codegraph_cmd="$project_dir/.tools/codegraph-standalone/v1.5.0/bin/codegraph"
+  codegraph_cmd="$project_dir/.tools/codegraph-standalone/v${codegraph_version}/bin/codegraph"
 else
   echo "CodeGraph skipped because npm is missing. Core research workflow remains available." >&2
 fi
