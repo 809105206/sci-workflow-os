@@ -2,7 +2,7 @@
 set -euo pipefail
 
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-version="v1.5.0"
+version="v1.6.0"
 
 case "$(uname -s)" in
   Darwin) platform="darwin" ;;
@@ -17,10 +17,10 @@ esac
 
 asset="codegraph-${platform}-${architecture}.tar.gz"
 case "$asset" in
-  codegraph-darwin-arm64.tar.gz) expected="cf5ee435a6e44d097b2f98f2b7b8b9422bb1094844404efed82519c5da1af2cf" ;;
-  codegraph-darwin-x64.tar.gz) expected="0a0ccc29bf7da9d10be1458d89d7e15c55927ae24cd95e9fa3de4bdfea059dde" ;;
-  codegraph-linux-arm64.tar.gz) expected="9f17750aedf45d51f68caae39ed21d6e2a7290b2326e5c53f95a165918ebd1d8" ;;
-  codegraph-linux-x64.tar.gz) expected="2ba65e87a1210b706bb1e67d5e48b5fc4a1935e43dbb3fb5f31c5597840d2e58" ;;
+  codegraph-darwin-arm64.tar.gz) expected="1c73033512d55f67be04717e81532e8beaf7be6fb8531f51a179fa23064ad480" ;;
+  codegraph-darwin-x64.tar.gz) expected="cb86a2b62ee676b62a56bf8423600e7d867e752e57f323cdc98c0f6236efd908" ;;
+  codegraph-linux-arm64.tar.gz) expected="6dc935a7b8f1a61e688a578b98ea34680eb2e36d7b91db079d64f4011f1a668f" ;;
+  codegraph-linux-x64.tar.gz) expected="de3391f79ed42622d937e6cd5b7642a7ea8bb7d1473607e80b879ba73ef216b0" ;;
 esac
 
 destination="$project_dir/.tools/codegraph-standalone/$version"
