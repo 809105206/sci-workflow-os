@@ -4,16 +4,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
-$Version = "v1.5.0"
+$Version = "v1.6.0"
 $Architecture = if (
     [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq "Arm64"
 ) { "arm64" } else { "x64" }
 $Target = "win32-$Architecture"
 $Asset = "codegraph-$Target.zip"
 $Expected = if ($Architecture -eq "arm64") {
-    "de125e792b5eed7dee8def2ab9bd7e762f372012f75f595e59d3b0c8714b0d55"
+    "3ca980010bd718a6b5e75be1145806ae6491afb1a59a2cec6cee4bf5c39f1b3a"
 } else {
-    "d6798622b4f44ee6757c94335f437ee27a9ff7d3537b554cb6a2b3baf11bc4a1"
+    "cd76c3c3391f2d40abef12b142151950b6d77abc2d8429e648f89eaa90f5b68a"
 }
 $Destination = Join-Path $ProjectDir ".tools\codegraph-standalone\$Version"
 $Executable = Join-Path $Destination "codegraph-$Target\bin\codegraph.cmd"
